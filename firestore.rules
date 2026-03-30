@@ -1,0 +1,259 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId
+    // Fields:
+    //   - theme: string (optional)
+    //   - mainTab: string (optional)
+    //   - createdAt: timestamp (optional)
+    //
+    // Collection: users/{userId}/accounts
+    // Fields:
+    //   - name: string (required, < 50 chars)
+    //   - balance: number (required)
+    //   - currency: string (required, < 10 chars)
+    //   - color: string (required, < 30 chars)
+    //
+    // Collection: users/{userId}/categories
+    // Fields:
+    //   - name: string (required, < 50 chars)
+    //   - type: string (required, in ['income', 'expense'])
+    //   - color: string (required, < 30 chars)
+    //   - planned: number (required)
+    //
+    // Collection: users/{userId}/budgetTxs
+    // Fields:
+    //   - date: string (required, < 30 chars)
+    //   - amount: number (required)
+    //   - categoryId: string (required, < 50 chars)
+    //   - accountId: string (required, < 50 chars)
+    //   - note: string (optional, < 200 chars)
+    //
+    // Collection: users/{userId}/investmentTxs
+    // Fields:
+    //   - type: string (required, in ['buy', 'sell', 'income'])
+    //   - date: string (required, < 30 chars)
+    //   - amountUsd: number (required)
+    //   - priceUsd: number (required)
+    //   - usdRate: number (required)
+    //   - tokens: number (required)
+    //   - source: string (optional, < 100 chars)
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+    
+    function isValidOptionalString(field, minLen, maxLen) {
+      return !(field in request.resource.data) ||
+             (request.resource.data[field] is string &&
+              request.resource.data[field].size() >= minLen &&
+              request.resource.data[field].size() <= maxLen);
+    }
+
+    // Domain Validators
+    function isValidUser() {
+      return isValidOptionalString('theme', 1, 50) &&
+             isValidOptionalString('mainTab', 1, 50) &&
+             isValidOptionalString('language', 2, 5) &&
+             (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp || request.resource.data.createdAt is string) &&
+             (!('investmentBalanceOverride' in request.resource.data) || request.resource.data.investmentBalanceOverride is number || request.resource.data.investmentBalanceOverride == null) &&
+             (!('budgetProportions' in request.resource.data) || request.resource.data.budgetProportions is map);
+    }
+
+    function isValidAccount() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['id', 'name', 'balance', 'currency', 'color', 'bankConnectionId', 'bankAccountId']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() < 50 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 50 &&
+             data.balance is number &&
+             data.currency is string && data.currency.size() > 0 && data.currency.size() < 10 &&
+             data.color is string && data.color.size() > 0 && data.color.size() < 30 &&
+             isValidOptionalString('bankConnectionId', 1, 50) &&
+             isValidOptionalString('bankAccountId', 1, 50);
+    }
+
+    function isValidCategory() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['id', 'name', 'type', 'color', 'planned']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() < 50 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 50 &&
+             data.type in ['income', 'expense', 'cushion', 'investment', 'goal'] &&
+             data.color is string && data.color.size() > 0 && data.color.size() < 30 &&
+             data.planned is number;
+    }
+
+    function isValidBudgetTx() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['id', 'type', 'date', 'time', 'amount', 'currency', 'accountId', 'toAccountId', 'categoryId', 'note', 'description', 'accountName', 'bankTxId', 'isAiCategorized']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() < 50 &&
+             data.type in ['income', 'expense', 'transfer', 'adjustment', 'investment', 'cushion', 'goal'] &&
+             data.date is string && data.date.size() > 0 && data.date.size() < 30 &&
+             isValidOptionalString('time', 1, 10) &&
+             data.amount is number &&
+             data.currency is string && data.currency.size() > 0 && data.currency.size() < 10 &&
+             data.accountId is string && data.accountId.size() > 0 && data.accountId.size() < 50 &&
+             isValidOptionalString('toAccountId', 1, 50) &&
+             isValidOptionalString('categoryId', 1, 50) &&
+             isValidOptionalString('note', 0, 500) &&
+             isValidOptionalString('description', 0, 500) &&
+             isValidOptionalString('accountName', 0, 100) &&
+             isValidOptionalString('bankTxId', 0, 100) &&
+             (!('isAiCategorized' in data) || data.isAiCategorized is bool);
+    }
+
+    function isValidInvestmentTx() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['id', 'type', 'date', 'time', 'amountUsd', 'priceUsd', 'usdRate', 'tokens', 'source']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() < 50 &&
+             data.type in ['buy', 'sell', 'income'] &&
+             data.date is string && data.date.size() > 0 && data.date.size() < 30 &&
+             isValidOptionalString('time', 1, 10) &&
+             data.amountUsd is number &&
+             data.priceUsd is number &&
+             data.usdRate is number &&
+             data.tokens is number &&
+             isValidOptionalString('source', 0, 100);
+    }
+
+    function isValidAsset() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['id', 'name', 'description', 'value']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() < 50 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             isValidOptionalString('description', 0, 500) &&
+             data.value is number;
+    }
+
+    function isValidPortfolio() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['id', 'name', 'type', 'createdAt']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() < 50 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.type in ['bitbon', 'crypto', 'alternative'] &&
+             data.createdAt is string && data.createdAt.size() > 0 && data.createdAt.size() < 30;
+    }
+
+    function isValidPortfolioAsset() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['id', 'portfolioId', 'name', 'symbol', 'amount', 'averagePrice', 'currentPrice', 'updatedAt']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() < 50 &&
+             data.portfolioId is string && data.portfolioId.size() > 0 && data.portfolioId.size() < 50 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             isValidOptionalString('symbol', 1, 20) &&
+             data.amount is number &&
+             (!('averagePrice' in data) || data.averagePrice is number) &&
+             (!('currentPrice' in data) || data.currentPrice is number) &&
+             data.updatedAt is string && data.updatedAt.size() > 0 && data.updatedAt.size() < 30;
+    }
+
+    function isValidBitbonAllocation() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['service', 'amount', 'month', 'note']) &&
+             data['service'] is string && data['service'].size() > 0 && data['service'].size() < 100 &&
+             data.amount is number &&
+             data.month is string && data.month.size() > 0 && data.month.size() < 20 &&
+             isValidOptionalString('note', 0, 500);
+    }
+
+    function isValidBankConnection() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['id', 'type', 'token', 'name', 'updatedAt']) &&
+             data.id is string && data.type in ['monobank'] &&
+             data.token is string && data.name is string &&
+             data.updatedAt is string;
+    }
+
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      match /portfolios/{portfolioId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidPortfolio();
+        allow update: if isOwner(userId) && isValidPortfolio();
+        allow delete: if isOwner(userId);
+      }
+
+      match /portfolioAssets/{assetId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidPortfolioAsset();
+        allow update: if isOwner(userId) && isValidPortfolioAsset();
+        allow delete: if isOwner(userId);
+      }
+
+      match /assets/{assetId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidAsset();
+        allow update: if isOwner(userId) && isValidAsset();
+        allow delete: if isOwner(userId);
+      }
+
+      match /accounts/{accountId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidAccount();
+        allow update: if isOwner(userId) && isValidAccount();
+        allow delete: if isOwner(userId);
+      }
+
+      match /categories/{categoryId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidCategory();
+        allow update: if isOwner(userId) && isValidCategory();
+        allow delete: if isOwner(userId);
+      }
+
+      match /budgetTxs/{txId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidBudgetTx();
+        allow update: if isOwner(userId) && isValidBudgetTx();
+        allow delete: if isOwner(userId);
+      }
+
+      match /investmentTxs/{txId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidInvestmentTx();
+        allow update: if isOwner(userId) && isValidInvestmentTx();
+        allow delete: if isOwner(userId);
+      }
+
+      match /bbAllocations/{allocId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidBitbonAllocation();
+        allow update: if isOwner(userId) && isValidBitbonAllocation();
+        allow delete: if isOwner(userId);
+      }
+
+      match /settings/{settingId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /monthlyPlans/{planId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId);
+        allow delete: if isOwner(userId);
+      }
+
+      match /bankConnections/{connId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidBankConnection();
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

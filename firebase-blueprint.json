@@ -1,0 +1,140 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and settings",
+      "type": "object",
+      "properties": {
+        "theme": { "type": "string", "description": "User selected theme" },
+        "mainTab": { "type": "string", "description": "Last active main tab" },
+        "createdAt": { "type": "timestamp", "description": "Account creation time" }
+      }
+    },
+    "Account": {
+      "title": "Account",
+      "description": "Budget account",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "balance": { "type": "number" },
+        "currency": { "type": "string" },
+        "color": { "type": "string" }
+      },
+      "required": ["name", "balance", "currency", "color"]
+    },
+    "BudgetCategory": {
+      "title": "BudgetCategory",
+      "description": "Budget category for income or expenses",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["income", "expense", "cushion", "investment", "goal"] },
+        "color": { "type": "string" },
+        "planned": { "type": "number" }
+      },
+      "required": ["name", "type", "color", "planned"]
+    },
+    "BudgetTx": {
+      "title": "BudgetTx",
+      "description": "Budget transaction",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["income", "expense", "transfer", "adjustment", "investment", "cushion", "goal"] },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "amount": { "type": "number" },
+        "categoryId": { "type": "string" },
+        "accountId": { "type": "string" },
+        "note": { "type": "string" }
+      },
+      "required": ["date", "amount", "categoryId", "accountId"]
+    },
+    "InvestmentTx": {
+      "title": "InvestmentTx",
+      "description": "Investment transaction",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["buy", "sell", "income"] },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "amountUsd": { "type": "number" },
+        "priceUsd": { "type": "number" },
+        "usdRate": { "type": "number" },
+        "tokens": { "type": "number" },
+        "source": { "type": "string" }
+      },
+      "required": ["type", "date", "amountUsd", "priceUsd", "usdRate", "tokens"]
+    },
+    "Asset": {
+      "title": "Asset",
+      "description": "Material property asset",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "value": { "type": "number" }
+      },
+      "required": ["name", "value"]
+    },
+    "Portfolio": {
+      "title": "Portfolio",
+      "description": "Investment portfolio",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["bitbon", "crypto", "alternative"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["name", "type", "createdAt"]
+    },
+    "PortfolioAsset": {
+      "title": "PortfolioAsset",
+      "description": "Asset within a portfolio",
+      "type": "object",
+      "properties": {
+        "portfolioId": { "type": "string" },
+        "name": { "type": "string" },
+        "symbol": { "type": "string" },
+        "amount": { "type": "number" },
+        "averagePrice": { "type": "number" },
+        "currentPrice": { "type": "number" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["portfolioId", "name", "amount", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profile"
+    },
+    "/users/{userId}/portfolios/{portfolioId}": {
+      "schema": { "$ref": "#/entities/Portfolio" },
+      "description": "User's investment portfolios"
+    },
+    "/users/{userId}/portfolioAssets/{assetId}": {
+      "schema": { "$ref": "#/entities/PortfolioAsset" },
+      "description": "User's portfolio assets"
+    },
+    "/users/{userId}/assets/{assetId}": {
+      "schema": { "$ref": "#/entities/Asset" },
+      "description": "User's material assets"
+    },
+    "/users/{userId}/accounts/{accountId}": {
+      "schema": { "$ref": "#/entities/Account" },
+      "description": "User's budget accounts"
+    },
+    "/users/{userId}/categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/BudgetCategory" },
+      "description": "User's budget categories"
+    },
+    "/users/{userId}/budgetTxs/{txId}": {
+      "schema": { "$ref": "#/entities/BudgetTx" },
+      "description": "User's budget transactions"
+    },
+    "/users/{userId}/investmentTxs/{txId}": {
+      "schema": { "$ref": "#/entities/InvestmentTx" },
+      "description": "User's investment transactions"
+    }
+  }
+}

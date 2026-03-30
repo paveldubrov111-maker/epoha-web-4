@@ -1,0 +1,418 @@
+interface MonthlyDetailViewProps {
+editingMonth: string;
+monthlyPlans: MonthlyPlan[];
+categories: BudgetCategory[];
+transactions: BudgetTx[];
+planningPillar: 'income' | 'expense' | 'investment' | 'cushion';
+setPlanningPillar: (p: 'income' | 'expense' | 'investment' | 'cushion') => void;
+setEditingMonth: (m: string | null) => void;
+formatGlobal: (n: number, cur?: Currency | 'USD') => string;
+userId: string | null;
+pillarStats: Record<'income' | 'expense' | 'investment' | 'cushion', { fact: number, plan: number }>;
+targetPercents: Record<string, number>;
+onAddCategory: (name: string, type: BudgetCategory['type']) => Promise<string | undefined>;
+globalCurrency: Currency;
+setMonthlyPlans: React.Dispatch<React.SetStateAction<MonthlyPlan[]>>;
+onDeleteCategory: (id: string) => Promise<void>;
+language: Language;
+t: (key: string) => string;
+}
+
+const MonthlyDetailView = ({
+editingMonth,
+monthlyPlans,
+categories,
+transactions,
+planningPillar,
+setPlanningPillar,
+setEditingMonth,
+formatGlobal,
+userId,
+pillarStats,
+targetPercents,
+onAddCategory,
+globalCurrency,
+setMonthlyPlans,
+onDeleteCategory,
+language,
+t
+}: MonthlyDetailViewProps) => {
+const [tempPlans, setTempPlans] = useState<Record<string, number>>(() => {
+const existing = monthlyPlans.find(mp => mp.id === editingMonth);
+return existing?.plans || {};
+});
+const [isAdding, setIsAdding] = useState(false);
+const [newCatName, setNewCatName] = useState('');
+const [isSaving, setIsSaving] = useState(false);
+const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+const isFirstRender = useRef(true);
+const isDirty = useRef(false);
+
+// Sync tempPlans when monthlyPlans prop updates from Firestore
+useEffect(() => {
+if (!isDirty.current) {
+const monthPlan = monthlyPlans.find(mp => mp.id === editingMonth);
+if (monthPlan?.plans) {
+console.log(`[Firestore DEBUG] Syncing plan for ${editingMonth} from prop`);
+setTempPlans(monthPlan.plans);
+}
+}
+}, [monthlyPlans, editingMonth]);
+
+const saveMonthlyPlan = async (currentPlans?: Record<string, number>) => {
+if (!userId) return;
+const plansToSave = currentPlans || tempPlans;
+setIsSaving(true);
+console.log(`[Firestore DEBUG] Saving plan for ${editingMonth} with ${Object.keys(plansToSave).length} categories...`);
+try {
+// 1. Update local state immediately for instant feedback
+setMonthlyPlans(prev => {
+const others = prev.filter(p => p.id !== editingMonth);
+return [...others, { id: editingMonth, plans: plansToSave }];
+});
+
+// 2. Save to Firestore
+const docRef = doc(db, `users/${userId}/monthlyPlans/${editingMonth}`);
+await setDoc(docRef, {
+id: editingMonth,
+userId: userId,
+plans: plansToSave,
+updatedAt: new Date().toISOString()
+});
+console.log(`[Firestore DEBUG] Successfully saved plan for ${editingMonth}`);
+isDirty.current = false;
+} catch (error) {
+console.error('[Firestore DEBUG] FAILED to save plan:', error);
+const msg = error instanceof Error ? error.message : String(error);
+alert(`Помилка під час збереження плану: ${msg}. Спробуйте оновити сторінку або перевірте підключення.`);
+handleFirestoreError(error, OperationType.UPDATE, `users/${userId}/monthlyPlans`);
+} finally {
+setIsSaving(false);
+}
+};
+
+// Debounced Auto-Save
+useEffect(() => {
+if (isFirstRender.current) {
+isFirstRender.current = false;
+return;
+}
+
+if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+
+saveTimerRef.current = setTimeout(() => {
+saveMonthlyPlan();
+}, 1000);
+
+return () => {
+if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+};
+}, [tempPlans]);
+
+const handleClose = async () => {
+if (saveTimerRef.current) {
+clearTimeout(saveTimerRef.current);
+saveTimerRef.current = null;
+}
+try {
+if (isDirty.current) {
+console.log('Final save before closing...');
+await saveMonthlyPlan();
+}
+} catch (e) {
+console.error('Error during final save:', e);
+// Even if save fails, we should probably let them exit or ask?
+// For now, let's keep them in but catch the error so it doesn't hang.
+} finally {
+setEditingMonth(null);
+}
+};
+
+if (!editingMonth) return null;
+
+const currentMonthName = getLocalizedMonths(language)[parseInt(editingMonth.split('-')[1], 10) - 1];
+const year = editingMonth.split('-')[0];
+
+const pillarCats = categories.filter(c => {
+if (planningPillar === 'income') return c.type === 'income';
+if (planningPillar === 'expense') return c.type === 'expense';
+if (planningPillar === 'investment') return c.type === 'investment';
+if (planningPillar === 'cushion') return c.type === 'cushion' || c.type === 'goal';
+return false;
+});
+
+const plannedTotal = Math.round(((targetPercents[planningPillar] || 0) / 100) * pillarStats.income.plan);
+const currentTotal = (pillarCats || []).reduce((sum, cat) => sum + (tempPlans[cat.id] ?? cat.planned), 0);
+const remaining = plannedTotal - currentTotal;
+
+const applyProportions = () => {
+if (pillarCats.length === 0) return;
+
+const targetPillarTotal = plannedTotal;
+const currentSum = currentTotal;
+const newTempPlans = { ...tempPlans };
+
+pillarCats.forEach(cat => {
+const currentVal = tempPlans[cat.id] ?? cat.planned;
+let newVal = 0;
+if (currentSum > 0) {
+newVal = Math.round(targetPillarTotal * (currentVal / currentSum));
+} else {
+newVal = Math.round(targetPillarTotal / pillarCats.length);
+}
+newTempPlans[cat.id] = newVal;
+});
+
+isDirty.current = true;
+setTempPlans(newTempPlans);
+};
+
+return (
+<div className="space-y-6 pb-20">
+{/* Header */}
+<div className="flex justify-between items-center mb-6">
+<div className="flex items-center gap-3">
+<button onClick={handleClose} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors">
+<ChevronLeft className="w-6 h-6" />
+</button>
+<h3 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 uppercase tracking-tight">
+Оновити план за {currentMonthName} {year}
+</h3>
+</div>
+<div className="flex items-center gap-4">
+{isSaving && (
+<div className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-full text-[10px] font-bold animate-pulse">
+<div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"></div>
+ЗБЕРЕЖЕННЯ...
+</div>
+)}
+<button
+onClick={handleClose}
+className="px-6 py-2.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-full text-sm font-bold shadow-lg hover:opacity-90 transition-all active:scale-95"
+>
+Готово
+</button>
+</div>
+</div>
+
+<div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+{(['income', 'expense', 'cushion', 'investment'] as const).map(p => (
+<button
+key={p}
+onClick={() => setPlanningPillar(p)}
+className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
+planningPillar === p
+? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-sm'
+: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+}`}
+>
+{p === 'income' ? 'Доходи' : p === 'expense' ? 'Витрати' : p === 'cushion' ? 'Подушка' : 'Інвестиції'}
+</button>
+))}
+</div>
+
+{/* Distribution Summary */}
+{planningPillar !== 'income' && (
+<motion.div
+initial={{ opacity: 0, y: 10 }}
+animate={{ opacity: 1, y: 0 }}
+className="glass-card p-6 rounded-[32px] border border-white/20 dark:border-zinc-800/50 shadow-xl overflow-hidden relative group"
+>
+<div className="relative z-10">
+<div className="flex justify-between items-center mb-1">
+<span className="text-[10px] font-black text-zinc-600 dark:text-white uppercase tracking-widest leading-none contrast-125">Бюджет блоку ({targetPercents[planningPillar] || 0}%)</span>
+<span className="text-[10px] font-black text-zinc-600 dark:text-white uppercase tracking-widest leading-none contrast-125">Розподілено</span>
+</div>
+<div className="flex justify-between items-end mb-5">
+<div className="text-2xl font-black text-zinc-900 dark:text-white tracking-tighter">{formatGlobal(plannedTotal)}</div>
+<div className="text-right flex flex-col items-end">
+<div className="text-xl font-black text-zinc-900 dark:text-white tracking-tighter">
+{formatGlobal(currentTotal)}
+</div>
+<button
+onClick={applyProportions}
+className="mt-2 flex items-center gap-1.5 px-3 py-1 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full text-[9px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-md"
+>
+Розподілити автоматично
+</button>
+</div>
+</div>
+
+{/* Progress Bar */}
+<div className="w-full bg-zinc-100 dark:bg-zinc-800/50 rounded-full h-2.5 overflow-hidden mb-3 shadow-inner">
+<motion.div
+initial={{ width: 0 }}
+animate={{ width: `${Math.min(100, (currentTotal / (plannedTotal || 1)) * 100)}%` }}
+transition={{ duration: 1, ease: "easeOut" }}
+className="h-full bg-zinc-900 dark:bg-white shadow-[0_0_12px_rgba(0,0,0,0.2)]"
+></motion.div>
+</div>
+<div className="flex justify-between text-[11px] font-black uppercase tracking-tighter">
+<span className="text-zinc-500">Залишилось: {formatGlobal(remaining)}</span>
+<span className="text-zinc-500">Дохід: {formatGlobal(pillarStats.income.plan)}</span>
+</div>
+</div>
+<div className="absolute top-0 right-0 w-64 h-64 bg-zinc-500/5 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-blue-500/5 transition-all"></div>
+</motion.div>
+)}
+
+{/* Category Grid */}
+<div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+{categories.filter(c => {
+if (planningPillar === 'income') return c.type === 'income';
+if (planningPillar === 'expense') return c.type === 'expense';
+if (planningPillar === 'investment') return c.type === 'investment';
+if (planningPillar === 'cushion') return c.type === 'cushion' || c.type === 'goal';
+return false;
+}).map(cat => {
+const monthTxs = transactions.filter(t => t.date.startsWith(editingMonth) && t.categoryId === cat.id);
+const fact = (monthTxs || []).reduce((sum, t) => sum + t.amount, 0);
+const currentPlan = tempPlans[cat.id] ?? cat.planned;
+
+return (
+<motion.div
+key={cat.id}
+initial={{ opacity: 0, scale: 0.95 }}
+animate={{ opacity: 1, scale: 1 }}
+className="glass-card p-4 rounded-[28px] border border-white/20 dark:border-zinc-800/50 shadow-sm flex flex-col justify-between min-h-[160px] group hover:border-blue-500/30 transition-all"
+>
+<div className="space-y-3">
+<div className="flex items-center justify-between gap-1.5">
+<div className="flex items-center gap-2 overflow-hidden">
+<div className={`w-3 h-3 rounded-full flex-shrink-0 ${cat.color || 'bg-blue-500'} shadow-[0_0_8px_rgba(0,0,0,0.1)]`}></div>
+<span className="text-[12px] font-black text-black dark:text-white truncate uppercase tracking-tight">{cat.name}</span>
+</div>
+<button
+onClick={async (e) => {
+e.stopPropagation();
+if (window.confirm(`Видалити категорію "${cat.name}"? Це видалить її з усіх місяців.`)) {
+await onDeleteCategory(cat.id);
+setTempPlans(prev => {
+const updated = { ...prev };
+delete updated[cat.id];
+return updated;
+});
+isDirty.current = true;
+}
+}}
+className="p-1.5 hover:bg-red-500/10 dark:hover:bg-red-500/20 text-zinc-400 hover:text-red-500 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+title="Видалити"
+>
+<Trash2 className="w-3.5 h-3.5" />
+</button>
+</div>
+
+<div className="flex justify-between items-end">
+<div className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Факт</div>
+<div className={`text-sm font-black ${fact > currentPlan && cat.type !== 'income' ? 'text-rose-600 dark:text-rose-400' : 'text-zinc-950 dark:text-white'}`}>
+{formatGlobal(fact)}
+</div>
+</div>
+
+<div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+<div
+className={`h-full transition-all duration-700 ${fact > currentPlan && cat.type !== 'income' ? 'bg-red-500' : 'bg-blue-500'}`}
+style={{ width: `${Math.min(100, currentPlan > 0 ? (fact / currentPlan) * 100 : 0)}%` }}
+></div>
+</div>
+</div>
+
+<div className="mt-4 flex gap-2">
+{cat.type !== 'income' && pillarStats[planningPillar].plan > 0 && (
+<div className="flex-1 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-800/30 px-3 py-2 rounded-2xl border border-zinc-100/50 dark:border-zinc-700/30 group/input focus-within:border-blue-500/50 transition-all">
+<span className="text-[10px] font-black text-zinc-800 dark:text-zinc-200">%</span>
+<input
+type="number"
+className="w-12 bg-transparent border-none text-[12px] font-black text-zinc-700 dark:text-zinc-300 text-right outline-none p-0 appearance-none"
+value={Math.round((currentPlan / pillarStats[planningPillar].plan) * 100)}
+onChange={(e) => {
+const p = Number(e.target.value);
+if (!isNaN(p)) {
+isDirty.current = true;
+setTempPlans(prev => ({ ...prev, [cat.id]: Math.round((p / 100) * pillarStats[planningPillar].plan) }));
+}
+}}
+/>
+</div>
+)}
+
+<div className="flex-[1.5] flex items-center justify-between bg-white dark:bg-zinc-800 px-3 py-2 rounded-2xl border border-zinc-200 dark:border-zinc-700 focus-within:border-blue-500 transition-all shadow-sm">
+<span className="text-[10px] font-black text-zinc-800 dark:text-zinc-200 uppercase tracking-tighter">{globalCurrency}</span>
+<input
+type="number"
+className="w-full bg-transparent border-none text-[12px] font-black text-zinc-900 dark:text-white text-right outline-none p-0"
+value={currentPlan || ''}
+placeholder="0"
+onChange={(e) => {
+isDirty.current = true;
+setTempPlans(prev => ({ ...prev, [cat.id]: Number(e.target.value) }));
+}}
+/>
+</div>
+</div>
+</motion.div>
+);
+})}
+
+{/* Quick Add Button & Form (inside the same grid!) */}
+<div className="relative min-h-[140px]">
+{!isAdding ? (
+<button
+onClick={() => setIsAdding(true)}
+className="w-full h-full border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[20px] text-zinc-400 dark:text-zinc-600 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-500 dark:hover:text-zinc-500 transition-all flex flex-col items-center justify-center gap-1 group bg-zinc-50/30"
+>
+<Plus className="w-6 h-6 group-hover:scale-110 transition-transform" />
+<span className="text-[10px] font-bold uppercase tracking-wider">Додати</span>
+</button>
+) : (
+<div className="w-full h-full bg-white dark:bg-zinc-900 border-2 border-blue-500 p-3 rounded-[20px] shadow-lg flex flex-col justify-between">
+<input
+autoFocus
+type="text"
+placeholder="Назва..."
+className="w-full bg-transparent border-none text-xs font-bold text-zinc-800 dark:text-zinc-100 outline-none"
+value={newCatName}
+onChange={(e) => setNewCatName(e.target.value)}
+onKeyDown={async (e) => {
+if (e.key === 'Enter' && newCatName) {
+const type = (planningPillar === 'cushion' ? 'cushion' : planningPillar) as BudgetCategory['type'];
+const id = await onAddCategory(newCatName, type);
+if (id) {
+isDirty.current = true;
+setTempPlans(prev => ({ ...prev, [id]: 0 }));
+}
+setIsAdding(false);
+setNewCatName('');
+}
+if (e.key === 'Escape') {
+setIsAdding(false);
+setNewCatName('');
+}
+}}
+/>
+<div className="flex justify-end gap-1 mt-2">
+<button onClick={() => setIsAdding(false)} className="p-1.5 text-zinc-400"><X className="w-4 h-4" /></button>
+<button
+disabled={!newCatName}
+onClick={async () => {
+const type = (planningPillar === 'cushion' ? 'cushion' : planningPillar) as BudgetCategory['type'];
+const id = await onAddCategory(newCatName, type);
+if (id) {
+isDirty.current = true;
+setTempPlans(prev => ({ ...prev, [id]: 0 }));
+}
+setIsAdding(false);
+setNewCatName('');
+}}
+className="p-1.5 bg-blue-500 text-white rounded-lg"
+>
+<Check className="w-4 h-4" />
+</button>
+</div>
+</div>
+)}
+</div>
+</div>
+</div>
+);
+};
