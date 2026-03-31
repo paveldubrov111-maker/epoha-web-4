@@ -271,6 +271,19 @@ export function writeBatch(db: any) {
               return rest;
             });
             ({ error } = await supabase.from(table).upsert(sanitizedPayload));
+            if (error) {
+              // Final fallback: row-by-row upsert avoids request-level column union issues.
+              for (const row of sanitizedPayload) {
+                const single = sanitizeTablePayload(table, row);
+                const { error: rowError } = await supabase.from(table).upsert(single);
+                if (rowError) {
+                  error = rowError;
+                  break;
+                } else {
+                  error = null as any;
+                }
+              }
+            }
           }
           if (error) {
             console.error(`[writeBatch] Error in batch upsert for ${table}:`, error);
