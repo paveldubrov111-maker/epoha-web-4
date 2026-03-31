@@ -1398,22 +1398,36 @@ export default function Budget({
     try {
       const now = Math.floor(Date.now() / 1000);
       const allStatements: any[] = [];
-      // Pull 6 months by 31-day windows so user sees more than just last ~31 days.
-      for (let i = 0; i < 6; i++) {
+      const seenStatementIds = new Set<string>();
+      // Pull deeper history by 31-day windows (up to 24 months), stop early if bank returns empty repeatedly.
+      let emptyWindows = 0;
+      for (let i = 0; i < 24; i++) {
         const to = now - (i * 31 * 24 * 60 * 60);
         const from = to - (31 * 24 * 60 * 60);
         const url = getMonobankUrl(`/personal/statement/${whiteAcc.bankAccountId}/${from}/${to}`, conn.token);
         const res = await fetch(url, { headers: { 'X-Token': conn.token, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY } });
         if (res.status === 429) {
-          addSyncLog(`⚠️ Форс-імпорт Білої: ліміт API на кроці ${i + 1}/6 (429).`);
+          addSyncLog(`⚠️ Форс-імпорт Білої: ліміт API на кроці ${i + 1}/24 (429).`);
           break;
         }
         if (!res.ok) {
-          addSyncLog(`❌ Форс-імпорт Білої: API ${res.status} (крок ${i + 1}/6).`);
+          addSyncLog(`❌ Форс-імпорт Білої: API ${res.status} (крок ${i + 1}/24).`);
           continue;
         }
         const part = await res.json();
-        if (Array.isArray(part)) allStatements.push(...part);
+        if (Array.isArray(part) && part.length > 0) {
+          emptyWindows = 0;
+          for (const st of part) {
+            const sid = String(st?.id || '');
+            if (!sid || seenStatementIds.has(sid)) continue;
+            seenStatementIds.add(sid);
+            allStatements.push(st);
+          }
+        } else {
+          emptyWindows += 1;
+          // Two empty old windows in a row -> likely no older statements for this account.
+          if (emptyWindows >= 2 && i >= 5) break;
+        }
         await new Promise(r => setTimeout(r, 1200));
       }
 
@@ -1422,6 +1436,7 @@ export default function Budget({
         addSyncLog('ℹ️ Форс-імпорт Білої: банк не повернув транзакції.');
         return;
       }
+      addSyncLog(`📦 Форс-імпорт Білої: банк повернув ${statements.length} унікальних записів (глибокий пошук).`);
 
       const { data: existingRows } = await supabase
         .from('budget_txs')
