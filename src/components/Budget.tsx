@@ -1374,15 +1374,31 @@ export default function Budget({
     setIsSyncingBank(true);
     try {
       const now = Math.floor(Date.now() / 1000);
-      const from = now - (31 * 24 * 60 * 60);
-      const url = getMonobankUrl(`/personal/statement/${whiteAcc.bankAccountId}/${from}/${now}`, conn.token);
-      const res = await fetch(url, { headers: { 'X-Token': conn.token, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY } });
-      if (!res.ok) {
-        addSyncLog(`❌ Форс-імпорт Білої: API ${res.status}`);
+      const allStatements: any[] = [];
+      // Pull 6 months by 31-day windows so user sees more than just last ~31 days.
+      for (let i = 0; i < 6; i++) {
+        const to = now - (i * 31 * 24 * 60 * 60);
+        const from = to - (31 * 24 * 60 * 60);
+        const url = getMonobankUrl(`/personal/statement/${whiteAcc.bankAccountId}/${from}/${to}`, conn.token);
+        const res = await fetch(url, { headers: { 'X-Token': conn.token, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY } });
+        if (res.status === 429) {
+          addSyncLog(`⚠️ Форс-імпорт Білої: ліміт API на кроці ${i + 1}/6 (429).`);
+          break;
+        }
+        if (!res.ok) {
+          addSyncLog(`❌ Форс-імпорт Білої: API ${res.status} (крок ${i + 1}/6).`);
+          continue;
+        }
+        const part = await res.json();
+        if (Array.isArray(part)) allStatements.push(...part);
+        await new Promise(r => setTimeout(r, 1200));
+      }
+
+      const statements = allStatements;
+      if (!Array.isArray(statements) || statements.length === 0) {
+        addSyncLog('ℹ️ Форс-імпорт Білої: банк не повернув транзакції.');
         return;
       }
-      const statements = await res.json();
-      if (!Array.isArray(statements)) return;
 
       const { data: existingRows } = await supabase
         .from('budget_txs')

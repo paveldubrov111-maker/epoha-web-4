@@ -255,6 +255,18 @@ export function writeBatch(db: any) {
       for (const table of Object.keys(setsByTable)) {
         const payload = setsByTable[table];
         if (payload.length > 0) {
+          if (table === 'budget_txs') {
+            // Force row-by-row writes for budget_txs to avoid PostgREST column-union/schema-cache issues.
+            for (const row of payload) {
+              const single = sanitizeTablePayload(table, row);
+              const { error } = await supabase.from(table).upsert(single);
+              if (error) {
+                console.error(`[writeBatch] Error in row upsert for ${table}:`, error, single);
+                throw error;
+              }
+            }
+            continue;
+          }
           const payloadToSend = table === 'budget_txs'
             ? payload.map((row: any) => {
                 const { mcc, ...rest } = row || {};
