@@ -293,10 +293,17 @@ function sanitizeTablePayload(table: string, payload: any) {
   if (!payload || typeof payload !== 'object') return payload;
 
   if (table === 'budget_txs') {
-    // `mcc` exists in app model, but may be absent in some deployed DB schemas.
-    // Sending it causes PGRST204 ("Could not find column in schema cache").
-    const { mcc, ...rest } = payload;
-    return rest;
+    // Strict allow-list to avoid PostgREST schema-cache mismatches (e.g. missing `mcc`).
+    const allowed = new Set([
+      'id', 'user_id', 'type', 'date', 'time', 'amount', 'currency',
+      'account_id', 'to_account_id', 'category_id', 'note', 'description',
+      'account_name', 'bank_tx_id', 'is_ai_categorized', 'is_incoming'
+    ]);
+    const clean: any = {};
+    for (const [k, v] of Object.entries(payload)) {
+      if (allowed.has(k)) clean[k] = v;
+    }
+    return clean;
   }
 
   return payload;
