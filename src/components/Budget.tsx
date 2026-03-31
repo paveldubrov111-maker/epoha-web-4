@@ -473,15 +473,16 @@ export default function Budget({
     console.log('[BANK DEBUG] Starting connection flow...');
     setIsSyncingBank(true);
     try {
-      // Note: Monobank API has CORS restrictions. In a real app, this should go through a backend proxy.
-      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const url = getMonobankUrl('/personal/client-info', bankToken);
-      const res = await fetch(url, {
-        headers: { 
-          'X-Token': bankToken,
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+      const res = await fetch(
+        "https://kcsitkemfmkdlttvqegp.supabase.co/functions/v1/monobank-proxy/personal/client-info",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Token": bankToken
+          }
         }
-      });
+      );
       if (!res.ok) {
         if (res.status === 404) {
           throw new Error('Проксі-функцію не знайдено в Supabase. Переконайтеся, що функція monobank-proxy розгорнута.');
