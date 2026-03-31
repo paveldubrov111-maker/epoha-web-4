@@ -968,10 +968,27 @@ export default function Budget({
     }
   };
 
+  const handleUnlinkAccount = async (appAccId: string) => {
+    if (!userId) return;
+    const acc = accounts.find(a => a.id === appAccId);
+    if (!acc) return;
+    try {
+      await setDoc(doc(db, `users/${userId}/accounts/${appAccId}`), {
+        ...acc,
+        bankConnectionId: null,
+        bankAccountId: null
+      });
+      addSyncLog(`🔌 Відв'язано рахунок "${acc.name}" від банківського підключення.`);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'accounts');
+    }
+  };
+
   const syncBankConnection = async (conn: BankConnection, silent = false, specificAccountId?: string) => {
     if (!userId) return { totalNew: 0 };
     try {
       // 1. Fetch current balances first to ensure Total Balance is accurate
+      let clientData: any = null;
       const clientUrl = getMonobankUrl('/personal/client-info', conn.token);
       const res = await fetch(clientUrl, { 
         headers: { 
@@ -980,7 +997,7 @@ export default function Budget({
         } 
       });
       if (res.ok) {
-        const clientData = await res.json();
+        clientData = await res.json();
         const batch = writeBatch(db);
         let balanceUpdates = 0;
 
@@ -1029,6 +1046,34 @@ export default function Budget({
 
       // 2. Now sync transactions
       let linkedAccs = accounts.filter(a => a.bankConnectionId === conn.id && a.bankAccountId);
+      if (linkedAccs.length === 0) {
+        const knownInfo = clientData || monobankClientInfos[conn.id];
+        const availableMonoIds = new Set<string>([
+          ...((knownInfo?.accounts || []) as any[]).map((a: any) => a.id),
+          ...((knownInfo?.jars || []) as any[]).map((j: any) => j.id)
+        ]);
+        // Fallback for legacy/mismatched links: if IDs are known, use them.
+        // If IDs are unknown (e.g. client-info got 429), fallback to all account records that have bankAccountId.
+        const fallbackLinked = accounts.filter(a => a.bankAccountId && availableMonoIds.has(a.bankAccountId));
+        const emergencyLinked = fallbackLinked.length > 0 ? fallbackLinked : accounts.filter(a => a.bankAccountId);
+        
+        if (emergencyLinked.length > 0) {
+          linkedAccs = emergencyLinked;
+          addSyncLog(`⚠️ Використано резервну прив'язку (${emergencyLinked.length}) для "${conn.name}".`);
+        }
+        if (fallbackLinked.length > 0) {
+          addSyncLog(`⚠️ Виявлено ${fallbackLinked.length} рах. без bankConnectionId. Відновлюю прив'язку до "${conn.name}"...`);
+          const repairBatch = writeBatch(db);
+          let repaired = 0;
+          for (const acc of fallbackLinked) {
+            if (acc.bankConnectionId !== conn.id) {
+              repairBatch.set(doc(db, `users/${userId}/accounts/${acc.id}`), { ...acc, bankConnectionId: conn.id });
+              repaired++;
+            }
+          }
+          if (repaired > 0) await repairBatch.commit();
+        }
+      }
       if (specificAccountId) {
         linkedAccs = linkedAccs.filter(a => a.id === specificAccountId);
       } else {
@@ -1043,6 +1088,10 @@ export default function Budget({
       }
       
       if (linkedAccs.length === 0) {
+        if (specificAccountId) {
+          // Expected for connections that don't own the selected account.
+          return { totalNew: 0 };
+        }
         if (!silent) {
           addSyncLog(`ПОМИЛКА: Немає прив'язаних рахунків для підключення "${conn.name}".`);
           alert(`До підключення "${conn.name}" не прив'язано жодного локального рахунку. \n\nБудь ласка, оберіть локальний рахунок у випадаючому списку під назвою банку "${conn.name}" на цій вкладці.`);
@@ -1331,13 +1380,12 @@ export default function Budget({
         syncBankBalancesOnly(true);
       }, 60 * 1000);
 
-      // 3. Tab Visibility & Window Focus triggers full sync (rate-limited)
-      // Enhanced: separate balance and full sync triggers
+      // 3. Tab Visibility & Window Focus triggers balance refresh only.
+      // Avoid full sync here to reduce 429 rate-limit bursts on /personal/client-info.
       const handleTrigger = () => {
         if (document.visibilityState === 'visible') {
           console.log('[SYNC] Triggered by focus/visibility');
           syncBankBalancesOnly(true);
-          handleSyncAllBanks(true);
         }
       };
       
@@ -3368,8 +3416,17 @@ export default function Budget({
                                 </div>
                                 <div>
                                   {linkedAppAcc ? (
-                                    <div className="w-full text-center text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-3 py-2.5 rounded-2xl uppercase tracking-tighter border border-emerald-500/20">
-                                      {linkedAppAcc.name}
+                                    <div className="space-y-2">
+                                      <div className="w-full text-center text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-3 py-2.5 rounded-2xl uppercase tracking-tighter border border-emerald-500/20">
+                                        {linkedAppAcc.name}
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleUnlinkAccount(linkedAppAcc.id)}
+                                        className="w-full text-[10px] font-black px-3 py-2 rounded-2xl border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 transition-all uppercase tracking-widest"
+                                      >
+                                        Відв'язати
+                                      </button>
                                     </div>
                                   ) : (
                                     <select 
@@ -3412,8 +3469,17 @@ export default function Budget({
                                     </div>
                                     <div>
                                       {linkedJarAcc ? (
-                                        <div className="w-full text-center text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-3 py-2.5 rounded-2xl uppercase tracking-tighter border border-emerald-500/20">
-                                          {linkedJarAcc.name}
+                                        <div className="space-y-2">
+                                          <div className="w-full text-center text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-3 py-2.5 rounded-2xl uppercase tracking-tighter border border-emerald-500/20">
+                                            {linkedJarAcc.name}
+                                          </div>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleUnlinkAccount(linkedJarAcc.id)}
+                                            className="w-full text-[10px] font-black px-3 py-2 rounded-2xl border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 transition-all uppercase tracking-widest"
+                                          >
+                                            Відв'язати
+                                          </button>
                                         </div>
                                       ) : (
                                         <select 
@@ -4740,4 +4806,3 @@ const CircularProgress = ({ percent, size = 56, strokeWidth = 5, colorClass = "t
     </div>
   );
 };
-

@@ -226,6 +226,27 @@ export function writeBatch(db: any) {
   const setsByTable: Record<string, any[]> = {};
   const deletes: Promise<any>[] = [];
 
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const upsertWithRetry = async (table: string, payload: any[], maxRetries = 3) => {
+    let lastError: any = null;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      const { error } = await supabase.from(table).upsert(payload);
+      if (!error) return;
+
+      lastError = error;
+      const isDeadlock = error?.code === '40P01' || String(error?.message || '').toLowerCase().includes('deadlock');
+      if (!isDeadlock || attempt === maxRetries) break;
+
+      const delay = 120 * Math.pow(2, attempt); // 120ms, 240ms, 480ms...
+      console.warn(`[writeBatch] Deadlock on ${table}, retry ${attempt + 1}/${maxRetries} in ${delay}ms`);
+      await sleep(delay);
+    }
+
+    throw lastError;
+  };
+
   return {
     set(ref: { path: string }, data: any, options?: { merge?: boolean }) {
       const { table, userId, id } = parsePath(ref.path);
@@ -252,11 +273,12 @@ export function writeBatch(db: any) {
     },
     async commit() {
       for (const table of Object.keys(setsByTable)) {
-        const payload = setsByTable[table];
+        const payload = [...setsByTable[table]].sort((a, b) => String(a.id || '').localeCompare(String(b.id || '')));
         if (payload.length > 0) {
           console.log(`[writeBatch] Upserting ${payload.length} records to ${table}`);
-          const { error } = await supabase.from(table).upsert(payload);
-          if (error) {
+          try {
+            await upsertWithRetry(table, payload);
+          } catch (error) {
             console.error(`[writeBatch] Error in batch upsert for ${table}:`, error);
             throw error;
           }
