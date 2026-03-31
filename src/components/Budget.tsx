@@ -1147,25 +1147,48 @@ export default function Budget({
           addSyncLog(`Отримання даних для ${appAcc.name} (ID: ${appAcc.bankAccountId.slice(0, 6)}...)...`);
         }
         
-        const url = getMonobankUrl(`/personal/statement/${appAcc.bankAccountId}/${thirtyDaysAgo}/${endBuffer}`, conn.token);
-        const res = await fetch(url, { 
-          headers: { 
-            'X-Token': conn.token,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
-          } 
-        });
-        
-        if (res.status === 429) {
-          addSyncLog(`⚠️ Rate Limit (429) для ${appAcc.name}. Спробуйте через 1-2 хвилини.`);
-          // If we hit 429, it's better to stop entirely for this connection to avoid further blocking
-          return { totalNew: totalNewForConn, error: 'Rate limit (429)' };
-        }
-        if (!res.ok) {
-          addSyncLog(`❌ Помилка API ${res.status} для ${appAcc.name}`);
-          continue;
+        const statements: any[] = [];
+        if (force) {
+          // Forced single-account sync: pull deeper history by 31-day windows.
+          for (let i = 0; i < 6; i++) {
+            const to = endBuffer - (i * 31 * 24 * 60 * 60);
+            const from = to - (31 * 24 * 60 * 60);
+            const url = getMonobankUrl(`/personal/statement/${appAcc.bankAccountId}/${from}/${to}`, conn.token);
+            const res = await fetch(url, { headers: { 'X-Token': conn.token, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY } });
+            if (res.status === 429) {
+              addSyncLog(`⚠️ Rate Limit (429) для ${appAcc.name} на кроці ${i + 1}/6.`);
+              break;
+            }
+            if (!res.ok) {
+              addSyncLog(`❌ Помилка API ${res.status} для ${appAcc.name} (крок ${i + 1}/6)`);
+              continue;
+            }
+            const part = await res.json();
+            if (Array.isArray(part)) statements.push(...part);
+            await new Promise(r => setTimeout(r, 1200));
+          }
+        } else {
+          const url = getMonobankUrl(`/personal/statement/${appAcc.bankAccountId}/${thirtyDaysAgo}/${endBuffer}`, conn.token);
+          const res = await fetch(url, { 
+            headers: { 
+              'X-Token': conn.token,
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+            } 
+          });
+          
+          if (res.status === 429) {
+            addSyncLog(`⚠️ Rate Limit (429) для ${appAcc.name}. Спробуйте через 1-2 хвилини.`);
+            // If we hit 429, it's better to stop entirely for this connection to avoid further blocking
+            return { totalNew: totalNewForConn, error: 'Rate limit (429)' };
+          }
+          if (!res.ok) {
+            addSyncLog(`❌ Помилка API ${res.status} для ${appAcc.name}`);
+            continue;
+          }
+          const part = await res.json();
+          if (Array.isArray(part)) statements.push(...part);
         }
 
-        const statements = await res.json();
         if (!Array.isArray(statements)) {
            addSyncLog(`⚠️ Відповідь банку для ${appAcc.name} не є списком транзакцій.`);
            continue;
