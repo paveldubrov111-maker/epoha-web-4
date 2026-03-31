@@ -1050,7 +1050,15 @@ export default function Budget({
           }
         }
 
-        if (balanceUpdates > 0) await batch.commit();
+        if (balanceUpdates > 0) {
+          try {
+            await batch.commit();
+          } catch (balanceErr) {
+            // Non-fatal: statement sync should continue even if balance write fails transiently.
+            console.warn('[SYNC] Balance upsert warning (continuing with tx sync):', balanceErr);
+            addSyncLog(`⚠️ Не вдалося оновити баланси (${conn.name}), продовжуємо синхронізацію транзакцій.`);
+          }
+        }
       }
 
       // 2. Now sync transactions
