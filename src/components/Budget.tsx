@@ -979,15 +979,25 @@ export default function Budget({
     try {
       let clientData: any = null;
       // 1. Fetch current balances first to ensure Total Balance is accurate
-      const clientUrl = getMonobankUrl('/personal/client-info', conn.token);
-      const res = await fetch(clientUrl, { 
-        headers: { 
-          'X-Token': conn.token,
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
-        } 
-      });
-      if (res.ok) {
-        clientData = await res.json();
+      const lastClientFetch = lastClientInfoFetchRef.current[conn.id] || 0;
+      const canUseCached = !force && !!monobankClientInfos[conn.id] && (Date.now() - lastClientFetch < 120000);
+      if (canUseCached) {
+        clientData = monobankClientInfos[conn.id];
+      } else {
+        const clientUrl = getMonobankUrl('/personal/client-info', conn.token);
+        const res = await fetch(clientUrl, { 
+          headers: { 
+            'X-Token': conn.token,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+          } 
+        });
+        if (res.ok) {
+          clientData = await res.json();
+          lastClientInfoFetchRef.current[conn.id] = Date.now();
+          setMonobankClientInfos(prev => ({ ...prev, [conn.id]: clientData }));
+        }
+      }
+      if (clientData) {
         const batch = writeBatch(db);
         let balanceUpdates = 0;
 
@@ -1305,6 +1315,16 @@ export default function Budget({
     }
   };
 
+  const handleSyncPrimaryWhiteCard = async () => {
+    const whiteAcc = accounts.find(a =>
+      !!a.bankAccountId && (
+        a.name.toLowerCase().includes('біла') ||
+        a.name.toLowerCase().includes('white')
+      )
+    );
+    await handleSyncAllBanks(false, true, whiteAcc?.id);
+  };
+
   const syncBankBalancesOnly = async (silent = true) => {
     if (!userId || isSyncingBalances || isSyncingBank || (silent && isBackgroundSyncingBalances)) return;
     
@@ -1314,15 +1334,24 @@ export default function Budget({
     try {
       const monobankConns = bankConnections.filter(c => c.type === 'monobank');
       for (const conn of monobankConns) {
-        const clientUrl = getMonobankUrl('/personal/client-info', conn.token);
-        const res = await fetch(clientUrl, { 
-          headers: { 
-            'X-Token': conn.token,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
-          } 
-        });
-        if (res.ok) {
-          const clientData = await res.json();
+        const lastClientFetch = lastClientInfoFetchRef.current[conn.id] || 0;
+        const canUseCached = !!monobankClientInfos[conn.id] && (Date.now() - lastClientFetch < 120000);
+        let clientData: any = null;
+        if (canUseCached) {
+          clientData = monobankClientInfos[conn.id];
+        } else {
+          const clientUrl = getMonobankUrl('/personal/client-info', conn.token);
+          const res = await fetch(clientUrl, { 
+            headers: { 
+              'X-Token': conn.token,
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+            } 
+          });
+          if (!res.ok) continue;
+          clientData = await res.json();
+          lastClientInfoFetchRef.current[conn.id] = Date.now();
+        }
+        if (clientData) {
           // Cache the client info as well
           setMonobankClientInfos(prev => ({ ...prev, [conn.id]: clientData }));
           
@@ -1370,22 +1399,19 @@ export default function Budget({
   // Periodic Sync (every 60s balance, silent full sync on focus/visibility)
   useEffect(() => {
     if (userId && bankConnections.some(c => c.type === 'monobank')) {
-      // 1. Initial sync
+      // 1. Initial balance sync only (avoid immediate statement rate-limit)
       syncBankBalancesOnly(true);
-      handleSyncAllBanks(true);
 
       // 2. Interval (60s) for balances
       const interval = setInterval(() => {
         syncBankBalancesOnly(true);
-      }, 60 * 1000);
+      }, 180 * 1000);
 
-      // 3. Tab Visibility & Window Focus triggers full sync (rate-limited)
-      // Enhanced: separate balance and full sync triggers
+      // 3. Tab Visibility & Window Focus triggers balance-only sync
       const handleTrigger = () => {
         if (document.visibilityState === 'visible') {
           console.log('[SYNC] Triggered by focus/visibility');
           syncBankBalancesOnly(true);
-          handleSyncAllBanks(true);
         }
       };
       
@@ -1648,6 +1674,7 @@ export default function Budget({
       return saved ? JSON.parse(saved) : {};
     } catch { return {}; }
   });
+  const lastClientInfoFetchRef = useRef<Record<string, number>>({});
 
   // Sync timestamps persistence
   useEffect(() => {
@@ -2487,7 +2514,7 @@ export default function Budget({
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
                     <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Капітал загальний</span>
                     <button 
-                      onClick={() => handleSyncAllBanks(false, true)}
+                      onClick={handleSyncPrimaryWhiteCard}
                       className="ml-2 p-1.5 hover:bg-white/10 rounded-full transition-colors group"
                       title="Оновити з банку"
                     >
@@ -3252,7 +3279,7 @@ export default function Budget({
                       ПЕРЕВІРИТИ ID РАХУНКІВ
                     </button>
                     <button 
-                      onClick={() => handleSyncAllBanks(false, true)}
+                      onClick={handleSyncPrimaryWhiteCard}
                       className="px-2 py-1 bg-amber-600 text-white rounded hover:bg-amber-700 font-bold"
                     >
                       ФОРСУВАТИ ПОВНИЙ СИНХРОН
@@ -3535,7 +3562,7 @@ export default function Budget({
                   <History className={`w-3 h-3 ${isSyncingBank ? 'animate-pulse' : ''}`} /> {isSyncingBank ? 'Синхронізація...' : 'Завантажити 6 місяців'}
                 </button>
                 <button
-                  onClick={() => handleSyncAllBanks(false, true)}
+                  onClick={handleSyncPrimaryWhiteCard}
                   disabled={isSyncingBank}
                   className="flex items-center gap-1.5 px-4 py-2 bg-blue-600/10 text-blue-600 dark:text-blue-400 rounded-full text-[11px] font-bold hover:bg-blue-600/20 transition-all uppercase tracking-tight"
                   title="Оновити баланси та останні 60 днів"
@@ -3583,7 +3610,7 @@ export default function Budget({
                       ПЕРЕВІРИТИ ID РАХУНКІВ
                     </button>
                     <button 
-                      onClick={() => handleSyncAllBanks(false, true)}
+                      onClick={handleSyncPrimaryWhiteCard}
                       className="px-2 py-1 bg-amber-600 text-white rounded hover:bg-amber-700 font-bold"
                     >
                       СФОРСУВАТИ ПОВНИЙ СИНХРОН (FORCE)
