@@ -1161,12 +1161,17 @@ export default function Budget({
         let sessionNew = 0;
         let sessionSkipped = 0;
         let sessionTransfers = 0;
+        const legacyRawIdsForAcc = new Set(
+          (transactions || [])
+            .filter(t => t.accountId === appAcc.id && t.bankTxId && !String(t.bankTxId).includes(':'))
+            .map(t => String(t.bankTxId))
+        );
 
         const txToPersist: BudgetTx[] = [];
 
         for (const st of statements) {
           const bankTxId = buildBankTxId(appAcc.bankAccountId, st.id);
-          if (syncedIds.has(bankTxId) || syncedIds.has(String(st.id))) {
+          if (syncedIds.has(bankTxId) || legacyRawIdsForAcc.has(String(st.id))) {
             sessionSkipped++;
             continue;
           }
@@ -1208,7 +1213,6 @@ export default function Budget({
 
           txToPersist.push(newTx);
           syncedIds.add(bankTxId);
-          syncedIds.add(String(st.id)); // backward compatibility with legacy rows
           sessionNew++;
           totalNewForConn++;
           const txMonth = date.slice(0, 7);
@@ -1488,11 +1492,16 @@ export default function Budget({
           const statements = await res.json();
           if (!Array.isArray(statements)) continue;
 
+          const legacyRawIdsForAcc = new Set(
+            (transactions || [])
+              .filter(t => t.accountId === appAcc.id && t.bankTxId && !String(t.bankTxId).includes(':'))
+              .map(t => String(t.bankTxId))
+          );
           const txToPersist: BudgetTx[] = [];
 
           for (const st of statements) {
             const bankTxId = buildBankTxId(appAcc.bankAccountId, st.id);
-            if (syncedIds.has(bankTxId) || syncedIds.has(String(st.id))) continue;
+            if (syncedIds.has(bankTxId) || legacyRawIdsForAcc.has(String(st.id))) continue;
 
             const newId = crypto.randomUUID();
             const date = new Date(st.time * 1000).toISOString().split('T')[0];
@@ -1526,7 +1535,6 @@ export default function Budget({
               isIncoming: st.amount > 0
             });
             syncedIds.add(bankTxId);
-            syncedIds.add(String(st.id)); // backward compatibility with legacy rows
             totalNewForConn++;
           }
         if (txToPersist.length > 0) {
