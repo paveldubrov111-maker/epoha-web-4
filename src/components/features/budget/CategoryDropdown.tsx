@@ -27,6 +27,7 @@ export function CategoryDropdown({
   placeholder = 'Без категорії',
   className = ''
 }: CategoryDropdownProps) {
+  const isFullWidth = className.includes('w-full');
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [isAdding, setIsAdding] = useState(false);
@@ -45,6 +46,9 @@ export function CategoryDropdown({
 
   const plannedCategories = filteredCategories.filter(c => plannedIds.includes(c.id));
   const otherCategories = filteredCategories.filter(c => !plannedIds.includes(c.id));
+  const quickCategories = [...plannedCategories, ...otherCategories]
+    .filter((category, index, self) => self.findIndex(item => item.id === category.id) === index)
+    .slice(0, 8);
 
   const currentCat = categories.find(c => c.id === currentCategoryId);
 
@@ -75,10 +79,14 @@ export function CategoryDropdown({
   }, [isOpen]);
 
   return (
-    <div className={`relative inline-block ${className}`} style={{ zIndex: isOpen ? 1000 : 1 }} ref={dropdownRef}>
+    <div className={`relative ${isFullWidth ? 'block' : 'inline-block'} ${className}`} style={{ zIndex: isOpen ? 1000 : 1 }} ref={dropdownRef}>
       <button
         onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl transition-all text-[10px] font-black uppercase tracking-tight max-w-[140px] md:max-w-[180px] shadow-sm ${
+        className={`flex items-center gap-1.5 transition-all shadow-sm ${
+          isFullWidth
+            ? 'w-full px-5 py-4 rounded-[20px] text-sm font-black tracking-tight justify-between'
+            : 'px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tight max-w-[140px] md:max-w-[180px]'
+        } ${
           currentCat 
             ? `${currentCat.color} text-white ring-1 ring-white/20 hover:scale-[1.02] active:scale-[0.98]` 
             : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
@@ -98,7 +106,7 @@ export function CategoryDropdown({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: openUp ? 10 : -10 }}
             onClick={(e) => e.stopPropagation()}
-            className={`absolute ${openRight ? 'left-0' : 'right-0'} ${openUp ? 'bottom-full mb-2' : 'top-full mt-2'} w-64 md:w-72 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-[24px] border border-zinc-200 dark:border-zinc-800 shadow-2xl z-[1000] overflow-hidden`}
+            className={`absolute ${openRight ? 'left-0' : 'right-0'} ${openUp ? 'bottom-full mb-2' : 'top-full mt-2'} ${isFullWidth ? 'w-full md:w-full' : 'w-64 md:w-80'} bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-[24px] border border-zinc-200 dark:border-zinc-800 shadow-2xl z-[1000] overflow-hidden`}
           >
             {!isAdding ? (
               <div className="p-2">
@@ -116,10 +124,28 @@ export function CategoryDropdown({
                   </div>
                 </div>
 
-                <div className="max-h-[400px] overflow-y-auto pr-1 custom-scrollbar space-y-1">
+                {quickCategories.length > 0 && !search && (
+                  <div className="px-2 pb-2 mb-1 border-b border-zinc-100 dark:border-zinc-800">
+                    <p className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.16em] mb-2">Швидкий вибір</p>
+                    <div className="grid grid-cols-2 gap-1">
+                      {quickCategories.map(c => (
+                        <button
+                          key={`quick-${c.id}`}
+                          onClick={() => { onSelect(c.id); setIsOpen(false); }}
+                          className={`px-2 py-1.5 rounded-lg flex items-center gap-2 transition-colors border ${currentCategoryId === c.id ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-transparent' : 'bg-zinc-50 dark:bg-zinc-800/60 border-zinc-100 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700'}`}
+                        >
+                          <div className={`w-2 h-2 rounded-full ${c.color} shrink-0`} />
+                          <span className="truncate text-[10px] font-bold uppercase tracking-tight">{c.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="max-h-[320px] overflow-y-auto pr-1 custom-scrollbar space-y-1">
                   <button
                     onClick={() => { onSelect(''); setIsOpen(false); }}
-                    className="w-full text-left px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-tight text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors mb-2 border border-dashed border-zinc-200 dark:border-zinc-800 flex items-center justify-center gap-2 group"
+                    className="w-full text-left px-2.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-tight text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors mb-2 border border-dashed border-zinc-200 dark:border-zinc-800 flex items-center justify-center gap-2 group"
                   >
                     <X className="w-3 h-3 group-hover:scale-110 transition-transform" />
                     {placeholder}
@@ -131,19 +157,21 @@ export function CategoryDropdown({
                         <div className="w-1 h-3 bg-blue-500 rounded-full" />
                         У плані
                       </div>
-                      {plannedCategories.map(c => (
-                        <button
-                          key={c.id}
-                          onClick={() => { onSelect(c.id); setIsOpen(false); }}
-                          className={`w-full text-left px-3 py-2 rounded-xl flex items-center gap-3 group transition-all mb-1 ${currentCategoryId === c.id ? 'bg-blue-50 dark:bg-blue-900/20 shadow-sm border border-blue-100 dark:border-blue-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50 border border-transparent'}`}
-                        >
-                          <div className={`w-2.5 h-2.5 rounded-full ${c.color} shadow-sm group-hover:scale-110 transition-transform`} />
-                          <span className={`text-[10px] font-bold uppercase tracking-tight ${currentCategoryId === c.id ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-700 dark:text-zinc-300'}`}>
-                            {c.name}
-                          </span>
-                          {currentCategoryId === c.id && <Check className="w-3.5 h-3.5 ml-auto text-blue-500" />}
-                        </button>
-                      ))}
+                      <div className="grid grid-cols-2 gap-1">
+                        {plannedCategories.map(c => (
+                          <button
+                            key={c.id}
+                            onClick={() => { onSelect(c.id); setIsOpen(false); }}
+                            className={`w-full text-left px-2 py-1.5 rounded-lg flex items-center gap-2 group transition-all ${currentCategoryId === c.id ? 'bg-blue-50 dark:bg-blue-900/20 shadow-sm border border-blue-100 dark:border-blue-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50 border border-transparent'}`}
+                          >
+                            <div className={`w-2 h-2 rounded-full ${c.color} shadow-sm group-hover:scale-110 transition-transform`} />
+                            <span className={`text-[10px] font-bold uppercase tracking-tight truncate ${currentCategoryId === c.id ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                              {c.name}
+                            </span>
+                            {currentCategoryId === c.id && <Check className="w-3 h-3 ml-auto text-blue-500 shrink-0" />}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
 
@@ -153,19 +181,21 @@ export function CategoryDropdown({
                         <div className="w-1 h-3 bg-zinc-300 dark:bg-zinc-700 rounded-full" />
                         Інші категорії
                       </div>
-                      {otherCategories.map(c => (
-                        <button
-                          key={c.id}
-                          onClick={() => { onSelect(c.id); setIsOpen(false); }}
-                          className={`w-full text-left px-3 py-2 rounded-xl flex items-center gap-3 group transition-all mb-1 ${currentCategoryId === c.id ? 'bg-zinc-100 dark:bg-zinc-800 shadow-sm border border-zinc-200 dark:border-zinc-700' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50 border border-transparent'}`}
-                        >
-                          <div className={`w-2.5 h-2.5 rounded-full ${c.color} shadow-sm opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all`} />
-                          <span className={`text-[10px] font-bold uppercase tracking-tight ${currentCategoryId === c.id ? 'text-zinc-900 dark:text-white' : 'text-zinc-500 dark:text-zinc-400'}`}>
-                            {c.name}
-                          </span>
-                          {currentCategoryId === c.id && <Check className="w-3.5 h-3.5 ml-auto text-zinc-400" />}
-                        </button>
-                      ))}
+                      <div className="grid grid-cols-2 gap-1">
+                        {otherCategories.map(c => (
+                          <button
+                            key={c.id}
+                            onClick={() => { onSelect(c.id); setIsOpen(false); }}
+                            className={`w-full text-left px-2 py-1.5 rounded-lg flex items-center gap-2 group transition-all ${currentCategoryId === c.id ? 'bg-zinc-100 dark:bg-zinc-800 shadow-sm border border-zinc-200 dark:border-zinc-700' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50 border border-transparent'}`}
+                          >
+                            <div className={`w-2 h-2 rounded-full ${c.color} shadow-sm opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all`} />
+                            <span className={`text-[10px] font-bold uppercase tracking-tight truncate ${currentCategoryId === c.id ? 'text-zinc-900 dark:text-white' : 'text-zinc-500 dark:text-zinc-400'}`}>
+                              {c.name}
+                            </span>
+                            {currentCategoryId === c.id && <Check className="w-3 h-3 ml-auto text-zinc-400 shrink-0" />}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
