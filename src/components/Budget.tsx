@@ -48,7 +48,8 @@ const INTERNAL_TRANSFER_PATTERNS = [
   'з рахунку на', 'собі на', 'своїх рахунк', 'свою картк', 'власної картк', 
   'зі своєї картк', 'власну карту', 'own accounts', 'скарбничк', 'transfer from',
   'переказ від', 'переказ на', 'поповнення з', 'надіслано від', 'надіслано на',
-  'зі скарбнички', 'з карти', 'на карту', 'свої кошти', 'sweeping'
+  'зі скарбнички', 'з карти', 'на карту', 'свої кошти', 'sweeping',
+  'поповнення «', 'з білої картки', 'з чорної картки', 'на банку', 'з банки'
 ];
 
 
@@ -394,6 +395,15 @@ export default function Budget({
   const addSyncLog = (msg: string) => {
     setSyncStatus(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 50));
     console.log(`[SYNC LOG] ${msg}`);
+  };
+  const mergeTransactionsLocal = (newTxs: BudgetTx[]) => {
+    if (!newTxs.length) return;
+    setTransactions(prev => {
+      const current = prev || [];
+      const seen = new Set(current.map(t => t.bankTxId || t.id));
+      const toAdd = newTxs.filter(t => !seen.has(t.bankTxId || t.id));
+      return toAdd.length ? [...toAdd, ...current] : current;
+    });
   };
   const [monobankClientInfos, setMonobankClientInfos] = useState<Record<string, any>>({});
   const [txVisibleCount, setTxVisibleCount] = useState(100);
@@ -968,19 +978,35 @@ export default function Budget({
     }
   };
 
-  const syncBankConnection = async (conn: BankConnection, silent = false, specificAccountId?: string) => {
+  const buildBankTxId = (bankAccountId: string | undefined, statementId: string | number) => {
+    if (!bankAccountId) return String(statementId);
+    return `${bankAccountId}:${String(statementId)}`;
+  };
+
+  const syncBankConnection = async (conn: BankConnection, silent = false, specificAccountId?: string, force = false) => {
     if (!userId) return { totalNew: 0 };
     try {
+      let clientData: any = null;
       // 1. Fetch current balances first to ensure Total Balance is accurate
-      const clientUrl = getMonobankUrl('/personal/client-info', conn.token);
-      const res = await fetch(clientUrl, { 
-        headers: { 
-          'X-Token': conn.token,
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
-        } 
-      });
-      if (res.ok) {
-        const clientData = await res.json();
+      const lastClientFetch = lastClientInfoFetchRef.current[conn.id] || 0;
+      const canUseCached = !force && !!monobankClientInfos[conn.id] && (Date.now() - lastClientFetch < 120000);
+      if (canUseCached) {
+        clientData = monobankClientInfos[conn.id];
+      } else {
+        const clientUrl = getMonobankUrl('/personal/client-info', conn.token);
+        const res = await fetch(clientUrl, { 
+          headers: { 
+            'X-Token': conn.token,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+          } 
+        });
+        if (res.ok) {
+          clientData = await res.json();
+          lastClientInfoFetchRef.current[conn.id] = Date.now();
+          setMonobankClientInfos(prev => ({ ...prev, [conn.id]: clientData }));
+        }
+      }
+      if (clientData) {
         const batch = writeBatch(db);
         let balanceUpdates = 0;
 
@@ -1024,11 +1050,42 @@ export default function Budget({
           }
         }
 
-        if (balanceUpdates > 0) await batch.commit();
+        if (balanceUpdates > 0) {
+          try {
+            await batch.commit();
+          } catch (balanceErr) {
+            // Non-fatal: statement sync should continue even if balance write fails transiently.
+            console.warn('[SYNC] Balance upsert warning (continuing with tx sync):', balanceErr);
+            addSyncLog(`⚠️ Не вдалося оновити баланси (${conn.name}), продовжуємо синхронізацію транзакцій.`);
+          }
+        }
       }
 
       // 2. Now sync transactions
       let linkedAccs = accounts.filter(a => a.bankConnectionId === conn.id && a.bankAccountId);
+
+      // Self-healing for legacy links:
+      // some accounts may have bankAccountId but missing bankConnectionId.
+      if (linkedAccs.length === 0 && clientData) {
+        const bankIds = new Set<string>([
+          ...(Array.isArray(clientData.accounts) ? clientData.accounts.map((a: any) => a.id) : []),
+          ...(Array.isArray(clientData.jars) ? clientData.jars.map((j: any) => j.id) : [])
+        ]);
+        const legacyLinked = accounts.filter(a => a.bankAccountId && bankIds.has(a.bankAccountId));
+        if (legacyLinked.length > 0) {
+          const repairBatch = writeBatch(db);
+          for (const acc of legacyLinked) {
+            repairBatch.update(doc(db, `users/${userId}/accounts/${acc.id}`), {
+              ...acc,
+              bankConnectionId: conn.id
+            });
+          }
+          await repairBatch.commit();
+          linkedAccs = legacyLinked.map(a => ({ ...a, bankConnectionId: conn.id }));
+          addSyncLog(`🔧 Відновлено прив'язку для ${legacyLinked.length} рахунків (${conn.name}).`);
+        }
+      }
+
       if (specificAccountId) {
         linkedAccs = linkedAccs.filter(a => a.id === specificAccountId);
       } else {
@@ -1057,10 +1114,11 @@ export default function Budget({
       
       const unlinkedBankAccs = new Set<string>();
       let totalNewForConn = 0;
+      let latestSyncedMonth: string | null = null;
       const now = Math.floor(Date.now() / 1000);
       const thirtyDaysAgo = now - (30 * 24 * 60 * 60); // Monobank limit is 31 days. 30 is safe.
       const endBuffer = now + 10; 
-      const syncedIds = new Set(transactions.map(t => t.bankTxId).filter(Boolean));
+      const syncedIds = new Set((transactions || []).map(t => t.bankTxId).filter(Boolean));
 
       for (const appAcc of linkedAccs) {
         if (!appAcc.bankAccountId) continue;
@@ -1069,8 +1127,10 @@ export default function Budget({
         const lastSync = lastAccountSyncTimes[appAcc.bankAccountId] || 0;
         const secondsSinceLast = Math.floor((Date.now() - lastSync) / 1000);
         
-        if (secondsSinceLast < 60) {
-          const wait = 60 - secondsSinceLast;
+        const isWhiteCard = appAcc.name.toLowerCase().includes('біла') || appAcc.name.toLowerCase().includes('white');
+        const cooldownSeconds = isWhiteCard ? 10 : 60;
+        if (!force && secondsSinceLast < cooldownSeconds) {
+          const wait = cooldownSeconds - secondsSinceLast;
           addSyncLog(`⚠️ Скіпнуто ${appAcc.name}: занадто часто (ще ${wait}с).`);
           continue;
         }
@@ -1087,25 +1147,48 @@ export default function Budget({
           addSyncLog(`Отримання даних для ${appAcc.name} (ID: ${appAcc.bankAccountId.slice(0, 6)}...)...`);
         }
         
-        const url = getMonobankUrl(`/personal/statement/${appAcc.bankAccountId}/${thirtyDaysAgo}/${endBuffer}`, conn.token);
-        const res = await fetch(url, { 
-          headers: { 
-            'X-Token': conn.token,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
-          } 
-        });
-        
-        if (res.status === 429) {
-          addSyncLog(`⚠️ Rate Limit (429) для ${appAcc.name}. Спробуйте через 1-2 хвилини.`);
-          // If we hit 429, it's better to stop entirely for this connection to avoid further blocking
-          return { totalNew: totalNewForConn, error: 'Rate limit (429)' };
-        }
-        if (!res.ok) {
-          addSyncLog(`❌ Помилка API ${res.status} для ${appAcc.name}`);
-          continue;
+        const statements: any[] = [];
+        if (force) {
+          // Forced single-account sync: pull deeper history by 31-day windows.
+          for (let i = 0; i < 6; i++) {
+            const to = endBuffer - (i * 31 * 24 * 60 * 60);
+            const from = to - (31 * 24 * 60 * 60);
+            const url = getMonobankUrl(`/personal/statement/${appAcc.bankAccountId}/${from}/${to}`, conn.token);
+            const res = await fetch(url, { headers: { 'X-Token': conn.token, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY } });
+            if (res.status === 429) {
+              addSyncLog(`⚠️ Rate Limit (429) для ${appAcc.name} на кроці ${i + 1}/6.`);
+              break;
+            }
+            if (!res.ok) {
+              addSyncLog(`❌ Помилка API ${res.status} для ${appAcc.name} (крок ${i + 1}/6)`);
+              continue;
+            }
+            const part = await res.json();
+            if (Array.isArray(part)) statements.push(...part);
+            await new Promise(r => setTimeout(r, 1200));
+          }
+        } else {
+          const url = getMonobankUrl(`/personal/statement/${appAcc.bankAccountId}/${thirtyDaysAgo}/${endBuffer}`, conn.token);
+          const res = await fetch(url, { 
+            headers: { 
+              'X-Token': conn.token,
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+            } 
+          });
+          
+          if (res.status === 429) {
+            addSyncLog(`⚠️ Rate Limit (429) для ${appAcc.name}. Спробуйте через 1-2 хвилини.`);
+            // If we hit 429, it's better to stop entirely for this connection to avoid further blocking
+            return { totalNew: totalNewForConn, error: 'Rate limit (429)' };
+          }
+          if (!res.ok) {
+            addSyncLog(`❌ Помилка API ${res.status} для ${appAcc.name}`);
+            continue;
+          }
+          const part = await res.json();
+          if (Array.isArray(part)) statements.push(...part);
         }
 
-        const statements = await res.json();
         if (!Array.isArray(statements)) {
            addSyncLog(`⚠️ Відповідь банку для ${appAcc.name} не є списком транзакцій.`);
            continue;
@@ -1118,12 +1201,17 @@ export default function Budget({
         let sessionNew = 0;
         let sessionSkipped = 0;
         let sessionTransfers = 0;
+        const legacyRawIdsForAcc = new Set(
+          (transactions || [])
+            .filter(t => t.accountId === appAcc.id && t.bankTxId && !String(t.bankTxId).includes(':'))
+            .map(t => String(t.bankTxId))
+        );
 
-        const batch = writeBatch(db);
-        let batchSize = 0;
+        const txToPersist: BudgetTx[] = [];
 
         for (const st of statements) {
-          if (syncedIds.has(st.id)) {
+          const bankTxId = buildBankTxId(appAcc.bankAccountId, st.id);
+          if (syncedIds.has(bankTxId) || legacyRawIdsForAcc.has(String(st.id))) {
             sessionSkipped++;
             continue;
           }
@@ -1158,22 +1246,26 @@ export default function Budget({
             categoryId: matchedCatId,
             description: st.description || '',
             accountName: appAcc.name,
-            bankTxId: st.id,
+            bankTxId,
             isAiCategorized: matchedCatId !== null,
-            isIncoming: st.amount > 0,
-            mcc: st.mcc
+            isIncoming: st.amount > 0
           };
 
-          batch.set(doc(db, `users/${userId}/budgetTxs/${newTxId}`), newTx);
-          syncedIds.add(st.id);
-          batchSize++;
+          txToPersist.push(newTx);
+          syncedIds.add(bankTxId);
           sessionNew++;
           totalNewForConn++;
+          const txMonth = date.slice(0, 7);
+          if (!latestSyncedMonth || txMonth > latestSyncedMonth) {
+            latestSyncedMonth = txMonth;
+          }
         }
 
-        if (batchSize > 0) {
-          await batch.commit();
-          addSyncLog(`✅ +${batchSize} нових для "${appAcc.name}". (Скіпнуто: ${sessionSkipped}, Переказів: ${sessionTransfers})`);
+        if (txToPersist.length > 0) {
+          // Avoid batch upsert schema-cache issues on some Supabase deployments.
+          await Promise.all(txToPersist.map(tx => setDoc(doc(db, `users/${userId}/budgetTxs/${tx.id}`), tx)));
+          mergeTransactionsLocal(txToPersist);
+          addSyncLog(`✅ +${txToPersist.length} нових для "${appAcc.name}". (Скіпнуто: ${sessionSkipped}, Переказів: ${sessionTransfers})`);
         } else {
           addSyncLog(`ℹ️ Нових для "${appAcc.name}" не знайдено. (В базі: ${sessionSkipped}, Переказів: ${sessionTransfers})`);
         }
@@ -1188,9 +1280,24 @@ export default function Budget({
         updatedAt: new Date().toISOString()
       }, { merge: true });
 
+      // UX fix: switch to the latest synced month so fresh imported txs are visible immediately.
+      if (!silent && latestSyncedMonth && selectedMonth !== latestSyncedMonth) {
+        setSelectedMonth(latestSyncedMonth);
+        addSyncLog(`📅 Перемкнуто період на ${latestSyncedMonth}, щоб показати нові транзакції.`);
+      }
+
       return { totalNew: totalNewForConn };
     } catch (err) {
       console.error(`[SYNC] Error for ${conn.name}:`, err);
+      if (String(err).includes("mcc")) {
+        addSyncLog(`⚙️ Активовано fallback форс-імпорту для Білої картки через помилку схеми.`);
+        try {
+          await forcePullWhiteTransactionsNow();
+          return { totalNew: 1 };
+        } catch (fallbackErr) {
+          console.error('[SYNC] Fallback force import failed:', fallbackErr);
+        }
+      }
       return { totalNew: 0, error: String(err) };
     }
   };
@@ -1199,7 +1306,7 @@ export default function Budget({
   const handleSyncBank = async (conn: BankConnection) => {
     if (!userId || isSyncingBank) return;
     setIsSyncingBank(true);
-    const result = await syncBankConnection(conn);
+        const result = await syncBankConnection(conn);
     setIsSyncingBank(false);
     if (!result.error) {
       console.log(`Синхронізацію завершено! Додано ${result.totalNew} нових транзакцій.`);
@@ -1224,13 +1331,18 @@ export default function Budget({
       setSyncStatus([]);
       addSyncLog('Розпочато повне оновлення всіх рахунків...');
     }
+
+    if (force) {
+      // Manual force sync must not be blocked by stale cooldown timestamps.
+      setLastAccountSyncTimes({});
+    }
     
     try {
       const monobankConns = bankConnections.filter(c => c.type === 'monobank');
       let totalNewOverall = 0;
       
       for (const conn of monobankConns) {
-        const result = await syncBankConnection(conn, silent, specificAccountId);
+        const result = await syncBankConnection(conn, silent, specificAccountId, force);
         totalNewOverall += result.totalNew;
         if (monobankConns.indexOf(conn) < monobankConns.length - 1) {
           await new Promise(r => setTimeout(r, 1000));
@@ -1257,6 +1369,140 @@ export default function Budget({
     }
   };
 
+  const handleSyncPrimaryWhiteCard = async () => {
+    const whiteAcc = accounts.find(a =>
+      !!a.bankAccountId && (
+        a.name.toLowerCase().includes('біла') ||
+        a.name.toLowerCase().includes('white')
+      )
+    );
+    await handleSyncAllBanks(false, true, whiteAcc?.id);
+  };
+
+  const forcePullWhiteTransactionsNow = async () => {
+    if (!userId) return;
+    const whiteAcc = accounts.find(a =>
+      !!a.bankAccountId && (
+        a.name.toLowerCase().includes('біла') ||
+        a.name.toLowerCase().includes('white')
+      )
+    );
+    if (!whiteAcc || !whiteAcc.bankConnectionId || !whiteAcc.bankAccountId) {
+      alert('Не знайдено привʼязану Білу картку для форс-імпорту.');
+      return;
+    }
+    const conn = bankConnections.find(c => c.id === whiteAcc.bankConnectionId);
+    if (!conn) return;
+
+    setIsSyncingBank(true);
+    try {
+      const now = Math.floor(Date.now() / 1000);
+      const allStatements: any[] = [];
+      const seenStatementIds = new Set<string>();
+      // Pull deeper history by 31-day windows (up to 24 months), stop early if bank returns empty repeatedly.
+      let emptyWindows = 0;
+      for (let i = 0; i < 24; i++) {
+        const to = now - (i * 31 * 24 * 60 * 60);
+        const from = to - (31 * 24 * 60 * 60);
+        const url = getMonobankUrl(`/personal/statement/${whiteAcc.bankAccountId}/${from}/${to}`, conn.token);
+        const res = await fetch(url, { headers: { 'X-Token': conn.token, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY } });
+        if (res.status === 429) {
+          addSyncLog(`⚠️ Форс-імпорт Білої: ліміт API на кроці ${i + 1}/24 (429).`);
+          break;
+        }
+        if (!res.ok) {
+          addSyncLog(`❌ Форс-імпорт Білої: API ${res.status} (крок ${i + 1}/24).`);
+          continue;
+        }
+        const part = await res.json();
+        if (Array.isArray(part) && part.length > 0) {
+          emptyWindows = 0;
+          for (const st of part) {
+            const sid = String(st?.id || '');
+            if (!sid || seenStatementIds.has(sid)) continue;
+            seenStatementIds.add(sid);
+            allStatements.push(st);
+          }
+        } else {
+          emptyWindows += 1;
+          // Two empty old windows in a row -> likely no older statements for this account.
+          if (emptyWindows >= 2 && i >= 5) break;
+        }
+        await new Promise(r => setTimeout(r, 1200));
+      }
+
+      const statements = allStatements;
+      if (!Array.isArray(statements) || statements.length === 0) {
+        addSyncLog('ℹ️ Форс-імпорт Білої: банк не повернув транзакції.');
+        return;
+      }
+      addSyncLog(`📦 Форс-імпорт Білої: банк повернув ${statements.length} унікальних записів (глибокий пошук).`);
+
+      const { data: existingRows } = await supabase
+        .from('budget_txs')
+        .select('bank_tx_id')
+        .eq('user_id', userId)
+        .eq('account_id', whiteAcc.id);
+      const existingBankIds = new Set((existingRows || []).map((r: any) => String(r.bank_tx_id)));
+
+      const rows = statements
+        .map((st: any) => {
+          const date = new Date(st.time * 1000).toISOString().split('T')[0];
+          const desc = (st.description || '').toLowerCase();
+          const isTransfer = INTERNAL_TRANSFER_PATTERNS.some(p => desc.includes(p)) || st.mcc === 4829 || st.mcc === 6011;
+          const type: BudgetTx['type'] = isTransfer ? 'transfer' : (st.amount > 0 ? 'income' : 'expense');
+          const bankTxId = buildBankTxId(whiteAcc.bankAccountId, st.id);
+          return {
+            id: crypto.randomUUID(),
+            user_id: userId,
+            type,
+            date,
+            time: new Date(st.time * 1000).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
+            amount: Math.abs(st.amount / 100),
+            currency: whiteAcc.currency,
+            account_id: whiteAcc.id,
+            category_id: matchCategory(st.description || '', categories) || null,
+            description: st.description || '',
+            account_name: whiteAcc.name,
+            bank_tx_id: bankTxId,
+            is_ai_categorized: !!matchCategory(st.description || '', categories),
+            is_incoming: st.amount > 0
+          };
+        })
+        .filter((r: any) => !existingBankIds.has(String(r.bank_tx_id)));
+
+      if (rows.length === 0) {
+        addSyncLog('ℹ️ Форс-імпорт Білої: нових транзакцій не знайдено.');
+        return;
+      }
+
+      const { error } = await supabase.from('budget_txs').insert(rows);
+      if (error) {
+        addSyncLog(`❌ Форс-імпорт Білої: ${error.message}`);
+        return;
+      }
+      mergeTransactionsLocal(rows.map((r: any) => ({
+        id: r.id,
+        type: r.type,
+        date: r.date,
+        time: r.time,
+        amount: r.amount,
+        currency: r.currency,
+        accountId: r.account_id,
+        categoryId: r.category_id || undefined,
+        description: r.description || '',
+        accountName: r.account_name || '',
+        bankTxId: r.bank_tx_id || undefined,
+        isAiCategorized: !!r.is_ai_categorized,
+        isIncoming: !!r.is_incoming
+      } as BudgetTx)));
+      addSyncLog(`✅ Форс-імпорт Білої: додано ${rows.length} транзакцій.`);
+      setSelectedMonth(rows[0].date.slice(0, 7));
+    } finally {
+      setIsSyncingBank(false);
+    }
+  };
+
   const syncBankBalancesOnly = async (silent = true) => {
     if (!userId || isSyncingBalances || isSyncingBank || (silent && isBackgroundSyncingBalances)) return;
     
@@ -1266,15 +1512,24 @@ export default function Budget({
     try {
       const monobankConns = bankConnections.filter(c => c.type === 'monobank');
       for (const conn of monobankConns) {
-        const clientUrl = getMonobankUrl('/personal/client-info', conn.token);
-        const res = await fetch(clientUrl, { 
-          headers: { 
-            'X-Token': conn.token,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
-          } 
-        });
-        if (res.ok) {
-          const clientData = await res.json();
+        const lastClientFetch = lastClientInfoFetchRef.current[conn.id] || 0;
+        const canUseCached = !!monobankClientInfos[conn.id] && (Date.now() - lastClientFetch < 120000);
+        let clientData: any = null;
+        if (canUseCached) {
+          clientData = monobankClientInfos[conn.id];
+        } else {
+          const clientUrl = getMonobankUrl('/personal/client-info', conn.token);
+          const res = await fetch(clientUrl, { 
+            headers: { 
+              'X-Token': conn.token,
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+            } 
+          });
+          if (!res.ok) continue;
+          clientData = await res.json();
+          lastClientInfoFetchRef.current[conn.id] = Date.now();
+        }
+        if (clientData) {
           // Cache the client info as well
           setMonobankClientInfos(prev => ({ ...prev, [conn.id]: clientData }));
           
@@ -1322,22 +1577,19 @@ export default function Budget({
   // Periodic Sync (every 60s balance, silent full sync on focus/visibility)
   useEffect(() => {
     if (userId && bankConnections.some(c => c.type === 'monobank')) {
-      // 1. Initial sync
+      // 1. Initial balance sync only (avoid immediate statement rate-limit)
       syncBankBalancesOnly(true);
-      handleSyncAllBanks(true);
 
       // 2. Interval (60s) for balances
       const interval = setInterval(() => {
         syncBankBalancesOnly(true);
-      }, 60 * 1000);
+      }, 180 * 1000);
 
-      // 3. Tab Visibility & Window Focus triggers full sync (rate-limited)
-      // Enhanced: separate balance and full sync triggers
+      // 3. Tab Visibility & Window Focus triggers balance-only sync
       const handleTrigger = () => {
         if (document.visibilityState === 'visible') {
           console.log('[SYNC] Triggered by focus/visibility');
           syncBankBalancesOnly(true);
-          handleSyncAllBanks(true);
         }
       };
       
@@ -1385,7 +1637,7 @@ export default function Budget({
       const linkedAccs = accounts.filter(a => a.bankConnectionId === conn.id && a.bankAccountId);
       if (linkedAccs.length === 0) return { totalNew: 0 };
 
-      const syncedIds = new Set(transactions.map(t => t.bankTxId).filter(Boolean));
+      const syncedIds = new Set((transactions || []).map(t => t.bankTxId).filter(Boolean));
       const nowSeconds = Math.floor(Date.now() / 1000);
       
       if (!silent) addSyncLog(`Розпочато глибоку синхронізацію для ${conn.name} (${months} міс.)...`);
@@ -1414,11 +1666,16 @@ export default function Budget({
           const statements = await res.json();
           if (!Array.isArray(statements)) continue;
 
-          const batch = writeBatch(db);
-          let count = 0;
+          const legacyRawIdsForAcc = new Set(
+            (transactions || [])
+              .filter(t => t.accountId === appAcc.id && t.bankTxId && !String(t.bankTxId).includes(':'))
+              .map(t => String(t.bankTxId))
+          );
+          const txToPersist: BudgetTx[] = [];
 
           for (const st of statements) {
-            if (syncedIds.has(st.id)) continue;
+            const bankTxId = buildBankTxId(appAcc.bankAccountId, st.id);
+            if (syncedIds.has(bankTxId) || legacyRawIdsForAcc.has(String(st.id))) continue;
 
             const newId = crypto.randomUUID();
             const date = new Date(st.time * 1000).toISOString().split('T')[0];
@@ -1427,13 +1684,16 @@ export default function Budget({
             let type: BudgetTx['type'] = st.amount > 0 ? 'income' : 'expense';
             
             const desc = (st.description || '').toLowerCase();
-            if (INTERNAL_TRANSFER_PATTERNS.some(p => desc.includes(p))) {
+            const matchesPattern = INTERNAL_TRANSFER_PATTERNS.some(p => desc.includes(p));
+            const matchesAccountName = accounts.some(acc => acc.id !== appAcc.id && desc.includes(acc.name.toLowerCase()));
+            const isTransferMcc = st.mcc === 4829 || st.mcc === 6011;
+            if (matchesPattern || matchesAccountName || isTransferMcc) {
               type = 'transfer';
             }
 
             const matchedCatId = matchCategory(st.description || '', categories) || null;
 
-            batch.set(doc(db, `users/${userId}/budgetTxs/${newId}`), {
+            txToPersist.push({
               id: newId,
               type,
               date,
@@ -1444,17 +1704,18 @@ export default function Budget({
               categoryId: matchedCatId,
               description: st.description || '',
               accountName: appAcc.name,
-              bankTxId: st.id,
-              isAiCategorized: matchedCatId !== ''
+              bankTxId,
+              isAiCategorized: matchedCatId !== '',
+              isIncoming: st.amount > 0
             });
-            syncedIds.add(st.id);
-            count++;
+            syncedIds.add(bankTxId);
             totalNewForConn++;
           }
-        if (count > 0) {
-          addSyncLog(`⏳ Збереження ${count} транзакцій (Крок ${i+1})...`);
-          await batch.commit();
-          console.log(`[HISTORY] Saved ${count} txs for ${appAcc.name}`);
+        if (txToPersist.length > 0) {
+          addSyncLog(`⏳ Збереження ${txToPersist.length} транзакцій (Крок ${i+1})...`);
+          await Promise.all(txToPersist.map(tx => setDoc(doc(db, `users/${userId}/budgetTxs/${tx.id}`), tx)));
+          mergeTransactionsLocal(txToPersist);
+          console.log(`[HISTORY] Saved ${txToPersist.length} txs for ${appAcc.name}`);
         } else {
           addSyncLog(`ℹ️ Нових транзакцій на цьому кроці не знайдено.`);
         }
@@ -1559,7 +1820,8 @@ export default function Budget({
         }
 
         if (changed) {
-          toUpdate.push({ ...tx, type: newType, isIncoming: newIsIncoming });
+          const { mcc, ...txWithoutMcc } = tx as any;
+          toUpdate.push({ ...txWithoutMcc, type: newType, isIncoming: newIsIncoming } as BudgetTx);
         }
       }
 
@@ -1567,11 +1829,7 @@ export default function Budget({
         addSyncLog(`Знайдено ${toUpdate.length} транзакцій для виправлення.`);
         for (let i = 0; i < toUpdate.length; i += 400) {
           const chunk = toUpdate.slice(i, i + 400);
-          const batch = writeBatch(db);
-          for (const tx of chunk) {
-            batch.set(doc(db, `users/${userId}/budgetTxs/${tx.id}`), tx);
-          }
-          await batch.commit();
+          await Promise.all(chunk.map(tx => setDoc(doc(db, `users/${userId}/budgetTxs/${tx.id}`), tx)));
           addSyncLog(`Пакет ${Math.floor(i/400) + 1} збережено (${chunk.length})...`);
         }
         alert(`Виправлено ${toUpdate.length} транзакцій!`);
@@ -1585,14 +1843,7 @@ export default function Budget({
     }
   };
 
-  // Auto-run reclassification once when transactions are loaded
-  const reclassifyRanRef = useRef(false);
-  useEffect(() => {
-    if (transactions.length > 0 && userId && !reclassifyRanRef.current) {
-      reclassifyRanRef.current = true;
-      repairTransactions();
-    }
-  }, [transactions, userId]);
+  // Auto-run disabled: it could trigger heavy writes and interfere with bank sync.
 
   const [planningFilter, setPlanningFilter] = useState<string>('all');
 
@@ -1606,6 +1857,7 @@ export default function Budget({
       return saved ? JSON.parse(saved) : {};
     } catch { return {}; }
   });
+  const lastClientInfoFetchRef = useRef<Record<string, number>>({});
 
   // Sync timestamps persistence
   useEffect(() => {
@@ -1882,6 +2134,14 @@ export default function Budget({
   const currentMonthTxs = useMemo(() => {
     return (transactions || []).filter(tx => tx.date.startsWith(selectedMonth));
   }, [transactions, selectedMonth]);
+
+  const latestTxMonth = useMemo(() => {
+    if (!transactions || transactions.length === 0) return null;
+    return transactions.reduce((max, tx) => {
+      const m = (tx.date || '').slice(0, 7);
+      return m > max ? m : max;
+    }, '0000-00');
+  }, [transactions]);
 
   const stats = useMemo(() => {
     let income = 0;
@@ -2437,7 +2697,7 @@ export default function Budget({
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
                     <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Капітал загальний</span>
                     <button 
-                      onClick={() => handleSyncAllBanks(false, true)}
+                      onClick={forcePullWhiteTransactionsNow}
                       className="ml-2 p-1.5 hover:bg-white/10 rounded-full transition-colors group"
                       title="Оновити з банку"
                     >
@@ -3202,7 +3462,7 @@ export default function Budget({
                       ПЕРЕВІРИТИ ID РАХУНКІВ
                     </button>
                     <button 
-                      onClick={() => handleSyncAllBanks(false, true)}
+                      onClick={forcePullWhiteTransactionsNow}
                       className="px-2 py-1 bg-amber-600 text-white rounded hover:bg-amber-700 font-bold"
                     >
                       ФОРСУВАТИ ПОВНИЙ СИНХРОН
@@ -3485,7 +3745,7 @@ export default function Budget({
                   <History className={`w-3 h-3 ${isSyncingBank ? 'animate-pulse' : ''}`} /> {isSyncingBank ? 'Синхронізація...' : 'Завантажити 6 місяців'}
                 </button>
                 <button
-                  onClick={() => handleSyncAllBanks(false, true)}
+                  onClick={forcePullWhiteTransactionsNow}
                   disabled={isSyncingBank}
                   className="flex items-center gap-1.5 px-4 py-2 bg-blue-600/10 text-blue-600 dark:text-blue-400 rounded-full text-[11px] font-bold hover:bg-blue-600/20 transition-all uppercase tracking-tight"
                   title="Оновити баланси та останні 60 днів"
@@ -3533,7 +3793,7 @@ export default function Budget({
                       ПЕРЕВІРИТИ ID РАХУНКІВ
                     </button>
                     <button 
-                      onClick={() => handleSyncAllBanks(false, true)}
+                      onClick={forcePullWhiteTransactionsNow}
                       className="px-2 py-1 bg-amber-600 text-white rounded hover:bg-amber-700 font-bold"
                     >
                       СФОРСУВАТИ ПОВНИЙ СИНХРОН (FORCE)
@@ -3607,6 +3867,18 @@ export default function Budget({
                 language={language}
               />
             </div>
+
+            {latestTxMonth && latestTxMonth !== selectedMonth && (
+              <div className="mb-4 px-4 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center justify-between gap-3">
+                <span>Є новіші транзакції у періоді {latestTxMonth}. Зараз показано {selectedMonth}.</span>
+                <button
+                  onClick={() => setSelectedMonth(latestTxMonth)}
+                  className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 transition-all text-[10px] uppercase tracking-wider"
+                >
+                  Показати новіші
+                </button>
+              </div>
+            )}
 
             <div className="space-y-3">
               {(currentMonthTxs || []).length === 0 ? (
@@ -4740,4 +5012,3 @@ const CircularProgress = ({ percent, size = 56, strokeWidth = 5, colorClass = "t
     </div>
   );
 };
-

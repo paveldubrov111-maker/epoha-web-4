@@ -62,6 +62,7 @@ function toSnakeCase(obj: any): any {
   const result: any = {};
   for (const key of Object.keys(obj)) {
     if (obj[key] === undefined) continue;
+    if (key === 'mcc') continue; // hard-block legacy field that is absent in some budget_txs schemas
     const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
     result[snakeKey] = obj[key];
   }
@@ -171,7 +172,7 @@ export function onSnapshot(ref: { path: string }, callback: (snapshot: any) => v
 export async function setDoc(ref: { path: string }, data: any, options?: { merge?: boolean }) {
   const { table, userId, id } = parsePath(ref.path);
   const snakeData = toSnakeCase(data);
-  const payload = { ...snakeData };
+  const payload = sanitizeTablePayload(table, { ...snakeData });
   if (table !== 'profiles') {
     payload.user_id = userId;
   }
@@ -232,7 +233,7 @@ export function writeBatch(db: any) {
       const idField = table === 'profiles' ? 'id' : 'id';
       if (!setsByTable[table]) setsByTable[table] = [];
       
-      const payload: any = { [idField]: id, ...toSnakeCase(data) };
+      const payload: any = sanitizeTablePayload(table, { [idField]: id, ...toSnakeCase(data) });
       if (table !== 'profiles' && userId) {
         payload.user_id = userId;
       }
@@ -254,8 +255,48 @@ export function writeBatch(db: any) {
       for (const table of Object.keys(setsByTable)) {
         const payload = setsByTable[table];
         if (payload.length > 0) {
+          if (table === 'budget_txs') {
+            // Force row-by-row writes for budget_txs to avoid PostgREST column-union/schema-cache issues.
+            for (const row of payload) {
+              const single = sanitizeTablePayload(table, row);
+              const { error } = await supabase.from(table).upsert(single);
+              if (error) {
+                console.error(`[writeBatch] Error in row upsert for ${table}:`, error, single);
+                throw error;
+              }
+            }
+            continue;
+          }
+          const payloadToSend = table === 'budget_txs'
+            ? payload.map((row: any) => {
+                const { mcc, ...rest } = row || {};
+                return rest;
+              })
+            : payload;
           console.log(`[writeBatch] Upserting ${payload.length} records to ${table}`);
-          const { error } = await supabase.from(table).upsert(payload);
+          let { error } = await supabase.from(table).upsert(payloadToSend);
+          if (error && table === 'budget_txs' && String(error?.message || '').includes("Could not find the 'mcc' column")) {
+            // Safety net: some runtime bundles/legacy objects may still contain mcc.
+            // Retry once with mcc stripped at commit time.
+            const sanitizedPayload = payload.map((row: any) => {
+              const { mcc, ...rest } = row || {};
+              return rest;
+            });
+            ({ error } = await supabase.from(table).upsert(sanitizedPayload));
+            if (error) {
+              // Final fallback: row-by-row upsert avoids request-level column union issues.
+              for (const row of sanitizedPayload) {
+                const single = sanitizeTablePayload(table, row);
+                const { error: rowError } = await supabase.from(table).upsert(single);
+                if (rowError) {
+                  error = rowError;
+                  break;
+                } else {
+                  error = null as any;
+                }
+              }
+            }
+          }
           if (error) {
             console.error(`[writeBatch] Error in batch upsert for ${table}:`, error);
             throw error;
@@ -267,4 +308,28 @@ export function writeBatch(db: any) {
       }
     }
   };
+}
+
+/**
+ * Supabase schema can temporarily lag behind frontend payload evolution.
+ * Keep writes resilient by stripping known non-schema fields per table.
+ */
+function sanitizeTablePayload(table: string, payload: any) {
+  if (!payload || typeof payload !== 'object') return payload;
+
+  if (table === 'budget_txs') {
+    // Strict allow-list to avoid PostgREST schema-cache mismatches (e.g. missing `mcc`).
+    const allowed = new Set([
+      'id', 'user_id', 'type', 'date', 'time', 'amount', 'currency',
+      'account_id', 'to_account_id', 'category_id', 'note', 'description',
+      'account_name', 'bank_tx_id', 'is_ai_categorized', 'is_incoming'
+    ]);
+    const clean: any = {};
+    for (const [k, v] of Object.entries(payload)) {
+      if (allowed.has(k)) clean[k] = v;
+    }
+    return clean;
+  }
+
+  return payload;
 }
