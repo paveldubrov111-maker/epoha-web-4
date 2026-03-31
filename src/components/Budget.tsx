@@ -396,6 +396,15 @@ export default function Budget({
     setSyncStatus(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 50));
     console.log(`[SYNC LOG] ${msg}`);
   };
+  const mergeTransactionsLocal = (newTxs: BudgetTx[]) => {
+    if (!newTxs.length) return;
+    setTransactions(prev => {
+      const current = prev || [];
+      const seen = new Set(current.map(t => t.bankTxId || t.id));
+      const toAdd = newTxs.filter(t => !seen.has(t.bankTxId || t.id));
+      return toAdd.length ? [...toAdd, ...current] : current;
+    });
+  };
   const [monobankClientInfos, setMonobankClientInfos] = useState<Record<string, any>>({});
   const [txVisibleCount, setTxVisibleCount] = useState(100);
 
@@ -1224,6 +1233,7 @@ export default function Budget({
         if (txToPersist.length > 0) {
           // Avoid batch upsert schema-cache issues on some Supabase deployments.
           await Promise.all(txToPersist.map(tx => setDoc(doc(db, `users/${userId}/budgetTxs/${tx.id}`), tx)));
+          mergeTransactionsLocal(txToPersist);
           addSyncLog(`✅ +${txToPersist.length} нових для "${appAcc.name}". (Скіпнуто: ${sessionSkipped}, Переказів: ${sessionTransfers})`);
         } else {
           addSyncLog(`ℹ️ Нових для "${appAcc.name}" не знайдено. (В базі: ${sessionSkipped}, Переказів: ${sessionTransfers})`);
@@ -1409,6 +1419,21 @@ export default function Budget({
         addSyncLog(`❌ Форс-імпорт Білої: ${error.message}`);
         return;
       }
+      mergeTransactionsLocal(rows.map((r: any) => ({
+        id: r.id,
+        type: r.type,
+        date: r.date,
+        time: r.time,
+        amount: r.amount,
+        currency: r.currency,
+        accountId: r.account_id,
+        categoryId: r.category_id || undefined,
+        description: r.description || '',
+        accountName: r.account_name || '',
+        bankTxId: r.bank_tx_id || undefined,
+        isAiCategorized: !!r.is_ai_categorized,
+        isIncoming: !!r.is_incoming
+      } as BudgetTx)));
       addSyncLog(`✅ Форс-імпорт Білої: додано ${rows.length} транзакцій.`);
       setSelectedMonth(rows[0].date.slice(0, 7));
     } finally {
@@ -1627,6 +1652,7 @@ export default function Budget({
         if (txToPersist.length > 0) {
           addSyncLog(`⏳ Збереження ${txToPersist.length} транзакцій (Крок ${i+1})...`);
           await Promise.all(txToPersist.map(tx => setDoc(doc(db, `users/${userId}/budgetTxs/${tx.id}`), tx)));
+          mergeTransactionsLocal(txToPersist);
           console.log(`[HISTORY] Saved ${txToPersist.length} txs for ${appAcc.name}`);
         } else {
           addSyncLog(`ℹ️ Нових транзакцій на цьому кроці не знайдено.`);
