@@ -1611,7 +1611,8 @@ export default function Budget({
         }
 
         if (changed) {
-          toUpdate.push({ ...tx, type: newType, isIncoming: newIsIncoming });
+          const { mcc, ...txWithoutMcc } = tx as any;
+          toUpdate.push({ ...txWithoutMcc, type: newType, isIncoming: newIsIncoming } as BudgetTx);
         }
       }
 
@@ -1619,11 +1620,7 @@ export default function Budget({
         addSyncLog(`Знайдено ${toUpdate.length} транзакцій для виправлення.`);
         for (let i = 0; i < toUpdate.length; i += 400) {
           const chunk = toUpdate.slice(i, i + 400);
-          const batch = writeBatch(db);
-          for (const tx of chunk) {
-            batch.set(doc(db, `users/${userId}/budgetTxs/${tx.id}`), tx);
-          }
-          await batch.commit();
+          await Promise.all(chunk.map(tx => setDoc(doc(db, `users/${userId}/budgetTxs/${tx.id}`), tx)));
           addSyncLog(`Пакет ${Math.floor(i/400) + 1} збережено (${chunk.length})...`);
         }
         alert(`Виправлено ${toUpdate.length} транзакцій!`);
@@ -1637,14 +1634,7 @@ export default function Budget({
     }
   };
 
-  // Auto-run reclassification once when transactions are loaded
-  const reclassifyRanRef = useRef(false);
-  useEffect(() => {
-    if (transactions.length > 0 && userId && !reclassifyRanRef.current) {
-      reclassifyRanRef.current = true;
-      repairTransactions();
-    }
-  }, [transactions, userId]);
+  // Auto-run disabled: it could trigger heavy writes and interfere with bank sync.
 
   const [planningFilter, setPlanningFilter] = useState<string>('all');
 
