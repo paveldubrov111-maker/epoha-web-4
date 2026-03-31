@@ -1152,8 +1152,7 @@ export default function Budget({
         let sessionSkipped = 0;
         let sessionTransfers = 0;
 
-        const batch = writeBatch(db);
-        let batchSize = 0;
+        const txToPersist: BudgetTx[] = [];
 
         for (const st of statements) {
           const bankTxId = buildBankTxId(appAcc.bankAccountId, st.id);
@@ -1197,10 +1196,9 @@ export default function Budget({
             isIncoming: st.amount > 0
           };
 
-          batch.set(doc(db, `users/${userId}/budgetTxs/${newTxId}`), newTx);
+          txToPersist.push(newTx);
           syncedIds.add(bankTxId);
           syncedIds.add(String(st.id)); // backward compatibility with legacy rows
-          batchSize++;
           sessionNew++;
           totalNewForConn++;
           const txMonth = date.slice(0, 7);
@@ -1209,9 +1207,10 @@ export default function Budget({
           }
         }
 
-        if (batchSize > 0) {
-          await batch.commit();
-          addSyncLog(`✅ +${batchSize} нових для "${appAcc.name}". (Скіпнуто: ${sessionSkipped}, Переказів: ${sessionTransfers})`);
+        if (txToPersist.length > 0) {
+          // Avoid batch upsert schema-cache issues on some Supabase deployments.
+          await Promise.all(txToPersist.map(tx => setDoc(doc(db, `users/${userId}/budgetTxs/${tx.id}`), tx)));
+          addSyncLog(`✅ +${txToPersist.length} нових для "${appAcc.name}". (Скіпнуто: ${sessionSkipped}, Переказів: ${sessionTransfers})`);
         } else {
           addSyncLog(`ℹ️ Нових для "${appAcc.name}" не знайдено. (В базі: ${sessionSkipped}, Переказів: ${sessionTransfers})`);
         }
@@ -1463,8 +1462,7 @@ export default function Budget({
           const statements = await res.json();
           if (!Array.isArray(statements)) continue;
 
-          const batch = writeBatch(db);
-          let count = 0;
+          const txToPersist: BudgetTx[] = [];
 
           for (const st of statements) {
             const bankTxId = buildBankTxId(appAcc.bankAccountId, st.id);
@@ -1486,7 +1484,7 @@ export default function Budget({
 
             const matchedCatId = matchCategory(st.description || '', categories) || null;
 
-            batch.set(doc(db, `users/${userId}/budgetTxs/${newId}`), {
+            txToPersist.push({
               id: newId,
               type,
               date,
@@ -1503,13 +1501,12 @@ export default function Budget({
             });
             syncedIds.add(bankTxId);
             syncedIds.add(String(st.id)); // backward compatibility with legacy rows
-            count++;
             totalNewForConn++;
           }
-        if (count > 0) {
-          addSyncLog(`⏳ Збереження ${count} транзакцій (Крок ${i+1})...`);
-          await batch.commit();
-          console.log(`[HISTORY] Saved ${count} txs for ${appAcc.name}`);
+        if (txToPersist.length > 0) {
+          addSyncLog(`⏳ Збереження ${txToPersist.length} транзакцій (Крок ${i+1})...`);
+          await Promise.all(txToPersist.map(tx => setDoc(doc(db, `users/${userId}/budgetTxs/${tx.id}`), tx)));
+          console.log(`[HISTORY] Saved ${txToPersist.length} txs for ${appAcc.name}`);
         } else {
           addSyncLog(`ℹ️ Нових транзакцій на цьому кроці не знайдено.`);
         }
