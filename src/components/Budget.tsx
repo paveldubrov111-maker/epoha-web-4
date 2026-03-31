@@ -1248,6 +1248,15 @@ export default function Budget({
       return { totalNew: totalNewForConn };
     } catch (err) {
       console.error(`[SYNC] Error for ${conn.name}:`, err);
+      if (String(err).includes("mcc")) {
+        addSyncLog(`⚙️ Активовано fallback форс-імпорту для Білої картки через помилку схеми.`);
+        try {
+          await forcePullWhiteTransactionsNow();
+          return { totalNew: 1 };
+        } catch (fallbackErr) {
+          console.error('[SYNC] Fallback force import failed:', fallbackErr);
+        }
+      }
       return { totalNew: 0, error: String(err) };
     }
   };
