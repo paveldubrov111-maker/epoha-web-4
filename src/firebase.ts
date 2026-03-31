@@ -62,6 +62,7 @@ function toSnakeCase(obj: any): any {
   const result: any = {};
   for (const key of Object.keys(obj)) {
     if (obj[key] === undefined) continue;
+    if (key === 'mcc') continue; // hard-block legacy field that is absent in some budget_txs schemas
     const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
     result[snakeKey] = obj[key];
   }
@@ -254,8 +255,14 @@ export function writeBatch(db: any) {
       for (const table of Object.keys(setsByTable)) {
         const payload = setsByTable[table];
         if (payload.length > 0) {
+          const payloadToSend = table === 'budget_txs'
+            ? payload.map((row: any) => {
+                const { mcc, ...rest } = row || {};
+                return rest;
+              })
+            : payload;
           console.log(`[writeBatch] Upserting ${payload.length} records to ${table}`);
-          let { error } = await supabase.from(table).upsert(payload);
+          let { error } = await supabase.from(table).upsert(payloadToSend);
           if (error && table === 'budget_txs' && String(error?.message || '').includes("Could not find the 'mcc' column")) {
             // Safety net: some runtime bundles/legacy objects may still contain mcc.
             // Retry once with mcc stripped at commit time.
