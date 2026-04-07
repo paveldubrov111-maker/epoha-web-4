@@ -1,34 +1,14 @@
 import React from 'react';
-import { Doughnut } from 'react-chartjs-2';
+// import { Doughnut } from 'react-chartjs-2';
+/*
 import {
   Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
+  // ...
 } from 'chart.js';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
+*/
 import { PieChart, TrendingUp, RefreshCw } from 'lucide-react';
 import { motion } from 'motion/react';
-import { fmt, fmtUsd } from '../../../../utils/format';
+import { Currency } from '../../../../types';
 
 interface AnalyticsGridProps {
   portfolios: any[];
@@ -36,6 +16,10 @@ interface AnalyticsGridProps {
   livePrice: number | null;
   bPrice: number;
   bUsdRate: number;
+  t: (key: string) => string;
+  formatGlobal: (n: number, targetCur: Currency, rates: Record<string, number>, sourceCur?: Currency, maxDecimals?: number, compact?: boolean) => string;
+  globalCurrency: Currency;
+  exchangeRates: Record<string, number>;
 }
 
 const AnalyticsGrid: React.FC<AnalyticsGridProps> = ({
@@ -43,7 +27,11 @@ const AnalyticsGrid: React.FC<AnalyticsGridProps> = ({
   globalMetrics,
   livePrice,
   bPrice,
-  bUsdRate
+  bUsdRate,
+  t,
+  formatGlobal,
+  globalCurrency,
+  exchangeRates
 }) => {
   const chartIdSuffix = React.useMemo(() => Math.random().toString(36).substring(2, 9), []);
 
@@ -55,9 +43,10 @@ const AnalyticsGrid: React.FC<AnalyticsGridProps> = ({
           <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
             <PieChart className="w-4 h-4" />
           </div>
-          <span className="text-xs font-black uppercase tracking-widest text-zinc-500">Розподіл Капіталу</span>
+          <span className="text-xs font-black uppercase tracking-widest text-zinc-500">{t('capitalDistribution')}</span>
         </div>
         <div className="h-48 relative flex items-center justify-center">
+          {/* 
           <Doughnut 
             id={`analytics-distribution-doughnut-${chartIdSuffix}`}
             key={`analytics-distribution-doughnut-${chartIdSuffix}`}
@@ -72,9 +61,13 @@ const AnalyticsGrid: React.FC<AnalyticsGridProps> = ({
             }}
             options={{ cutout: '75%', plugins: { legend: { display: false } }, maintainAspectRatio: false }}
           />
+          */}
+          <div className="w-full h-full flex items-center justify-center bg-zinc-800/10 rounded-full border border-dashed border-white/5">
+            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest text-center">Chart Disabled</span>
+          </div>
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <div className="text-[10px] font-black text-zinc-400 uppercase tracking-tighter">Всього</div>
-            <div className="text-xl font-black text-zinc-800 dark:text-zinc-100">{fmtUsd(globalMetrics.totalCapitalUsd || 0)}</div>
+            <div className="text-[10px] font-black text-zinc-400 uppercase tracking-tighter">{t('total')}</div>
+            <div className="text-xl font-black text-zinc-800 dark:text-zinc-100">{formatGlobal(globalMetrics.currentValueUsd || 0, globalCurrency, exchangeRates, 'USD')}</div>
           </div>
         </div>
       </div>
@@ -85,14 +78,14 @@ const AnalyticsGrid: React.FC<AnalyticsGridProps> = ({
           <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
             <TrendingUp className="w-4 h-4" />
           </div>
-          <span className="text-xs font-black uppercase tracking-widest text-zinc-500">Прибутковість</span>
+          <span className="text-xs font-black uppercase tracking-widest text-zinc-500">{t('profitability')}</span>
         </div>
         <div className="space-y-4">
           <div className="flex justify-between items-end">
             <div>
-              <div className="text-[10px] font-black text-zinc-400 uppercase mb-1">Загальний прибуток</div>
-              <div className={`text-2xl font-black ${(globalMetrics.totalProfit || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                {(globalMetrics.totalProfit || 0) >= 0 ? '+' : ''}{fmtUsd(globalMetrics.totalProfit || 0)}
+              <div className="text-[10px] font-black text-zinc-400 uppercase mb-1">{t('totalProfitLabel')}</div>
+              <div className={`text-2xl font-black ${(globalMetrics.totalProfitUsd || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                {(globalMetrics.totalProfitUsd || 0) >= 0 ? '+' : ''}{formatGlobal(globalMetrics.totalProfitUsd || 0, globalCurrency, exchangeRates, 'USD')}
               </div>
             </div>
             <div className="text-right">
@@ -116,12 +109,12 @@ const AnalyticsGrid: React.FC<AnalyticsGridProps> = ({
           <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
             <RefreshCw className="w-4 h-4" />
           </div>
-          <span className="text-xs font-black uppercase tracking-widest text-zinc-500">Статус Ринку</span>
+          <span className="text-xs font-black uppercase tracking-widest text-zinc-500">{t('marketStatus')}</span>
         </div>
         <div className="space-y-3">
           <div className="flex justify-between items-center p-3 rounded-2xl bg-zinc-50/50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-white/5">
             <span className="text-xs font-bold text-zinc-500 uppercase tracking-tight">ERBB/USD</span>
-            <span className="text-sm font-black text-zinc-800 dark:text-zinc-100">{fmtUsd(livePrice || bPrice)}</span>
+            <span className="text-sm font-black text-zinc-800 dark:text-zinc-100">{formatGlobal(livePrice || bPrice, globalCurrency, exchangeRates, 'USD')}</span>
           </div>
         </div>
       </div>

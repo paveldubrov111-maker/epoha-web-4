@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Line, Doughnut } from 'react-chartjs-2';
+// import { Line, Doughnut } from 'react-chartjs-2';
+/*
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -14,19 +15,7 @@ import {
   Legend,
   Filler
 } from 'chart.js';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
+*/
 import { 
   Plus, Trash2, Edit2, RefreshCw, ShoppingCart, Search, X, 
   Minus, ChevronDown, ChevronUp, TrendingUp, Wallet 
@@ -45,16 +34,20 @@ interface Props {
   usdRate: number;
   availableBalanceUsd?: number;
   onRecordTransaction?: (tx: Omit<PortfolioTransaction, 'id'>) => Promise<void>;
-  formatGlobal: (n: number, cur?: Currency | 'USD') => string;
+  formatGlobal: (n: number, targetCur: Currency, rates: Record<string, number>, sourceCur?: Currency, maxDecimals?: number, compact?: boolean) => string;
   globalCurrency: Currency;
+  exchangeRates: Record<string, number>;
   theme: string;
+  language: any;
+  t: (key: string) => string;
 }
 
 export default function PortfolioView({ 
   portfolio, assets, onAddAsset, onUpdateAsset, onDeleteAsset, 
   onDeletePortfolio, currency, usdRate, availableBalanceUsd, 
   onRecordTransaction,
-  formatGlobal, globalCurrency, theme 
+  formatGlobal, globalCurrency, exchangeRates, theme,
+  language, t
 }: Props) {
   // Form state
   const [showBuyForm, setShowBuyForm] = useState(false);
@@ -132,8 +125,8 @@ export default function PortfolioView({
 
   const isCrypto = portfolio.type === 'crypto' || portfolio.type === 'bitbon';
   const isBitbon = portfolio.type === 'bitbon';
-  const walletLabel = isBitbon ? 'гаманець' : 'актив';
-  const WalletLabel = isBitbon ? 'Гаманець' : 'Актив';
+  const walletLabel = isBitbon ? t('calcBitbon').toLowerCase() : t('assetType').toLowerCase();
+  const WalletLabel = isBitbon ? t('calcBitbon') : t('assetType');
 
   const chartIdSuffix = useMemo(() => Math.random().toString(36).substring(2, 9), []);
 
@@ -682,16 +675,11 @@ export default function PortfolioView({
   };
 
   const formatUsd = (val: number) => {
-    return formatGlobal(val, 'USD');
+    return formatGlobal(val, globalCurrency, exchangeRates, 'USD');
   };
 
   const formatPrice = (val: number) => {
-    if (globalCurrency === 'USD') {
-      if (val >= 1) return `$${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      if (val >= 0.01) return `$${val.toFixed(4)}`;
-      return `$${val.toFixed(8)}`;
-    }
-    return formatGlobal(val, 'USD');
+    return formatGlobal(val, globalCurrency, exchangeRates, 'USD', 4);
   };
 
   // Asset analytics
@@ -790,7 +778,7 @@ export default function PortfolioView({
               {isCrypto ? <TrendingUp className="w-5 h-5 text-white dark:text-zinc-900" /> : <Wallet className="w-5 h-5 text-white dark:text-zinc-900" />}
             </div>
             <div>
-              <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-0.5">{portfolio.type}</div>
+              <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-0.5">{portfolio.type === 'crypto' ? t('cryptoAssets') : portfolio.type === 'bitbon' ? t('calcBitbon') : t('altInvestments')}</div>
               <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">{portfolio.name}</h2>
             </div>
             {onDeletePortfolio && !['bitbon', 'crypto'].includes(portfolio.id) && (
@@ -804,24 +792,24 @@ export default function PortfolioView({
           {isBitbon && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               <div className="bg-indigo-500/5 dark:bg-indigo-900/10 p-5 rounded-[32px] border border-indigo-100 dark:border-indigo-800/30">
-                <div className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Капітал у Bitbon</div>
+                <div className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">{t('capitalInBitbon')}</div>
                 <div className="text-xl font-black text-zinc-900 dark:text-zinc-100">{assets.reduce((sum, a) => sum + a.amount, 0).toLocaleString()} BB</div>
-                <div className="text-[9px] font-bold text-zinc-500 uppercase mt-1">≈ {formatGlobal(assets.reduce((sum, a) => sum + a.amount * (a.currentPrice || 1), 0), 'USD')}</div>
+                <div className="text-[9px] font-bold text-zinc-500 uppercase mt-1">≈ {formatGlobal(assets.reduce((sum, a) => sum + a.amount * (a.currentPrice || 1), 0), globalCurrency, exchangeRates, 'USD')}</div>
               </div>
               <div className="bg-emerald-500/5 dark:bg-emerald-900/10 p-5 rounded-[32px] border border-emerald-100 dark:border-emerald-800/30">
-                <div className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Дохід в BB</div>
+                <div className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">{t('incomeInBB')}</div>
                 <div className="text-xl font-black text-emerald-600 dark:text-emerald-400">+{portfolio.totalIncomeTokens || 0} BB</div>
                 {portfolio.totalIncomeUsd && (
-                  <div className="text-[9px] font-bold text-zinc-500 uppercase mt-1">≈ {formatGlobal(portfolio.totalIncomeUsd, 'USD')}</div>
+                  <div className="text-[9px] font-bold text-zinc-500 uppercase mt-1">≈ {formatGlobal(portfolio.totalIncomeUsd, globalCurrency, exchangeRates, 'USD')}</div>
                 )}
               </div>
               <div className="bg-amber-500/5 dark:bg-amber-900/10 p-5 rounded-[32px] border border-amber-100 dark:border-amber-800/30">
-                <div className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">Куплено BB ($)</div>
-                <div className="text-xl font-black text-zinc-900 dark:text-zinc-100">{formatGlobal(portfolio.totalBoughtUsd || 0, 'USD')}</div>
+                <div className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">{t('boughtBBUsd')}</div>
+                <div className="text-xl font-black text-zinc-900 dark:text-zinc-100">{formatGlobal(portfolio.totalBoughtUsd || 0, globalCurrency, exchangeRates, 'USD')}</div>
               </div>
               <div className="bg-red-500/5 dark:bg-red-900/10 p-5 rounded-[32px] border border-red-100 dark:border-red-800/30">
-                <div className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">Продано BB ($)</div>
-                <div className="text-xl font-black text-zinc-900 dark:text-zinc-100">{formatGlobal(portfolio.totalSoldUsd || 0, 'USD')}</div>
+                <div className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">{t('soldBBUsd')}</div>
+                <div className="text-xl font-black text-zinc-900 dark:text-zinc-100">{formatGlobal(portfolio.totalSoldUsd || 0, globalCurrency, exchangeRates, 'USD')}</div>
               </div>
             </div>
           )}
@@ -830,7 +818,7 @@ export default function PortfolioView({
             {isCrypto && (
               <button onClick={fetchAllPrices} disabled={loadingPrices} className="flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-zinc-800/80 backdrop-blur-sm text-zinc-700 dark:text-zinc-200 rounded-full text-[11px] font-bold hover:bg-white dark:hover:bg-zinc-700 transition-all shadow-sm border border-zinc-200/50 dark:border-zinc-700/50">
                 <RefreshCw className={`w-3.5 h-3.5 ${loadingPrices ? 'animate-spin' : ''}`} /> 
-                Оновити ціни
+                {t('updatePrices')}
               </button>
             )}
             {(isCrypto || isBitbon) && (
@@ -844,7 +832,7 @@ export default function PortfolioView({
                 }}
                 className="flex items-center gap-2 px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-full text-[11px] font-bold hover:opacity-90 transition-all shadow-lg uppercase tracking-wider"
               >
-                <Plus className="w-3.5 h-3.5" /> {isBitbon ? 'Додати гаманець' : 'Додати актив'}
+                <Plus className="w-3.5 h-3.5" /> {isBitbon ? t('addWallet') : t('addAsset')}
               </button>
             )}
             {isBitbon && (
@@ -853,19 +841,19 @@ export default function PortfolioView({
                   onClick={() => { setSelectedCrypto({ name: 'Bitbon', symbol: 'BB' }); setBuyAmountUsd(100); setBuyPrice(assets[0]?.currentPrice || 1); setShowBuyForm(true); }}
                   className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-full text-[11px] font-bold hover:bg-emerald-700 transition-all shadow-lg uppercase tracking-wider"
                 >
-                  <ShoppingCart className="w-3.5 h-3.5" /> Купити BB
+                  <ShoppingCart className="w-3.5 h-3.5" /> {t('buyBB')}
                 </button>
                 <button 
                   onClick={() => { setShowSellForm(true); setSellAsset(assets[0] || null); }}
                   className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-full text-[11px] font-bold hover:bg-red-700 transition-all shadow-lg uppercase tracking-wider"
                 >
-                  <Minus className="w-3.5 h-3.5" /> Продати BB
+                  <Minus className="w-3.5 h-3.5" /> {t('sellBB')}
                 </button>
                 <button 
                   onClick={() => { setShowTransferForm(true); setTransferSourceId(assets[0]?.id || ''); setTransferTargetId(assets[1]?.id || ''); }}
                   className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-full text-[11px] font-bold hover:bg-indigo-700 transition-all shadow-lg uppercase tracking-wider"
                 >
-                  <RefreshCw className="w-3.5 h-3.5" /> Перемістити
+                  <RefreshCw className="w-3.5 h-3.5" /> {t('transfer')}
                 </button>
               </>
             )}
@@ -873,8 +861,8 @@ export default function PortfolioView({
               <div className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-full shadow-lg shadow-indigo-500/20 border border-indigo-400/30">
                 <Wallet className="w-3.5 h-3.5" />
                 <div className="flex flex-col leading-none">
-                  <span className="text-[8px] font-black uppercase tracking-widest opacity-80 mb-0.5">Доступно</span>
-                  <span className="text-[11px] font-black">{formatGlobal(availableBalanceUsd * usdRate)}</span>
+                  <span className="text-[8px] font-black uppercase tracking-widest opacity-80 mb-0.5">{t('available')}</span>
+                  <span className="text-[11px] font-black">{formatGlobal(availableBalanceUsd, globalCurrency, exchangeRates, 'USD')}</span>
                 </div>
               </div>
             )}
@@ -884,19 +872,19 @@ export default function PortfolioView({
         {/* Summary horizontal grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white/30 dark:bg-zinc-900/40 backdrop-blur-md p-6 rounded-[32px] border border-white/20 dark:border-white/5 shadow-sm relative group overflow-hidden">
-            <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 opacity-60">Текуча вартість</div>
+            <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 opacity-60">{t('currentValue')}</div>
             <div className="text-3xl font-black text-zinc-900 dark:text-zinc-100">{formatUsd(totalValueUsd)}</div>
             <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -mr-12 -mt-12 blur-2xl group-hover:bg-blue-500/10 transition-all"></div>
           </div>
           {isCrypto && (
             <>
               <div className="bg-white/30 dark:bg-zinc-900/40 backdrop-blur-md p-6 rounded-[32px] border border-white/20 dark:border-white/5 shadow-sm relative group overflow-hidden">
-                <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 opacity-60">Вкладено</div>
+                <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 opacity-60">{t('invested')}</div>
                 <div className="text-3xl font-black text-zinc-900 dark:text-zinc-100">{formatUsd(totalInvestedUsd)}</div>
                 <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full -mr-12 -mt-12 blur-2xl group-hover:bg-indigo-500/10 transition-all"></div>
               </div>
               <div className={`bg-white/30 dark:bg-zinc-900/40 backdrop-blur-md p-6 rounded-[32px] border shadow-sm relative group overflow-hidden ${profitUsd >= 0 ? 'border-emerald-500/20' : 'border-red-500/20'}`}>
-                <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 opacity-60">Прибуток / ROI</div>
+                <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 opacity-60">{t('profitRoi')}</div>
                 <div className={`text-3xl font-black flex items-baseline gap-2 ${profitUsd >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                   {profitUsd >= 0 ? '+' : ''}{formatUsd(profitUsd)}
                   <span className="text-xs font-black opacity-80">({roi >= 0 ? '+' : ''}{roi.toFixed(2)}%)</span>
@@ -911,15 +899,15 @@ export default function PortfolioView({
         {isBitbon && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="md:col-span-1 bg-white/30 dark:bg-zinc-900/40 backdrop-blur-md p-6 rounded-[32px] border border-emerald-500/20 shadow-sm overflow-hidden relative group">
-              <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 opacity-60">Фактична ціна ERBB</div>
+              <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 opacity-60">{t('actualErbbPrice')}</div>
               <div className="flex items-baseline gap-2">
                 <div className="text-3xl font-black text-emerald-500">
-                  {allPrices['ERBB'] ? `$${allPrices['ERBB'].toFixed(4)}` : '$1.1240'}
+                  {allPrices['ERBB'] ? formatGlobal(allPrices['ERBB'], globalCurrency, exchangeRates, 'USD', 4) : formatGlobal(1.1240, globalCurrency, exchangeRates, 'USD', 4)}
                 </div>
                 <div className="text-xs font-bold text-emerald-600/60 uppercase tracking-tight">USDT</div>
               </div>
               <div className="mt-2 flex items-center gap-1.5 text-[10px] font-black text-emerald-600 bg-emerald-500/5 px-2 py-1 rounded-lg w-fit">
-                <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" /> Live Price
+                <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" /> {t('marketPrice')}
               </div>
               <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -mr-12 -mt-12 blur-2xl group-hover:bg-emerald-500/10 transition-all"></div>
             </div>
@@ -936,8 +924,12 @@ export default function PortfolioView({
         {/* Allocation Chart & Summary */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="md:col-span-1 glass-card p-6 rounded-[40px] border border-white/20 dark:border-zinc-800/50 shadow-xl flex flex-col items-center bg-white/10 backdrop-blur-md">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-6">Розподіл часток</h4>
+            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-6">{t('allocation')}</h4>
             <div className="w-full max-w-[170px] aspect-square relative flex items-center justify-center">
+              <div className="w-full h-full flex items-center justify-center bg-zinc-800/30 rounded-full border border-white/5">
+                <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest text-center">Chart</div>
+              </div>
+              {/* 
               <Doughnut 
                 id={`portfolio-allocation-doughnut-${chartIdSuffix}`}
                 key={`portfolio-allocation-doughnut-${chartIdSuffix}`}
@@ -948,8 +940,9 @@ export default function PortfolioView({
                   maintainAspectRatio: true
                 }}
               />
+              */}
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Портфель</span>
+                <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">{t('portfolioTitle')}</span>
                 <span className="text-sm font-black text-zinc-900 dark:text-zinc-100">{formatUsd(totalValueUsd).split('.')[0]}</span>
               </div>
             </div>
@@ -964,12 +957,12 @@ export default function PortfolioView({
           </div>
           <div className="md:col-span-2 grid grid-cols-2 gap-4">
             <div className="glass-card p-6 rounded-[40px] border border-white/20 dark:border-zinc-800/50 shadow-xl bg-gradient-to-br from-white/20 to-blue-50/10 dark:from-white/5 dark:to-blue-900/5 transition-all hover:scale-[1.01]">
-              <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-1">Поточне значення</div>
+              <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-1">{t('currentValue')}</div>
               <div className="text-3xl font-black text-zinc-900 dark:text-zinc-100">{formatUsd(totalValueUsd)}</div>
             </div>
             <div className="glass-card p-6 rounded-[40px] border border-white/20 dark:border-zinc-800/50 shadow-xl flex flex-col justify-between hover:scale-[1.01] transition-all">
               <div>
-                <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-1">Чистий прибуток</div>
+                <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-1">{t('totalProfit')}</div>
                 <div className={`text-2xl font-black ${profitUsd >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                   {profitUsd >= 0 ? '+' : '-'}{formatUsd(Math.abs(profitUsd))}
                 </div>
@@ -985,8 +978,8 @@ export default function PortfolioView({
           <div className="bg-zinc-950/[0.03] dark:bg-zinc-100/[0.03] rounded-[40px] p-8 mb-8 border border-zinc-200/50 dark:border-white/5 shadow-inner">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
               <div>
-                <h3 className="text-sm font-black text-zinc-800 dark:text-zinc-100 uppercase tracking-widest mb-1">Динаміка вартості</h3>
-                <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-tight">Дані з Binance API</p>
+                <h3 className="text-sm font-black text-zinc-800 dark:text-zinc-100 uppercase tracking-widest mb-1">{t('valueDynamics')}</h3>
+                <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-tight">{t('dataFromBinance')}</p>
               </div>
               <div className="flex flex-wrap gap-1.5 p-1 bg-white/50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50">
                 {['1D', '1W', '1M', '3M', '6M', '1Y', 'ALL'].map(tf => (
@@ -996,7 +989,7 @@ export default function PortfolioView({
                         ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-lg scale-105' 
                         : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200'
                     }`}>
-                    {tf === '1D' ? '1Д' : tf === '1W' ? '1Т' : tf === '1M' ? '1М' : tf === '3M' ? '3М' : tf === '6M' ? '6М' : tf === '1Y' ? '1Р' : 'ВСІ'}
+                    {tf === '1D' ? t('oneDay') : tf === '1W' ? t('oneWeek') : tf === '1M' ? t('oneMonth') : tf === '3M' ? t('threeMonths') : tf === '6M' ? t('sixMonths') : tf === '1Y' ? t('oneYear') : t('allTime')}
                   </button>
                 ))}
               </div>
@@ -1011,61 +1004,9 @@ export default function PortfolioView({
                   </div>
                 </div>
               ) : chartData.labels.length > 0 ? (
-                <Line
-                  id={`portfolio-dynamics-line-${chartIdSuffix}`}
-                  key={`portfolio-dynamics-line-${chartIdSuffix}`}
-                  data={{
-                    labels: chartData.labels,
-                      datasets: [{
-                        label: 'Вартість портфеля',
-                        data: chartData.data.map(v => currency === 'USD' ? v : v * usdRate),
-                        borderColor: '#10b981',
-                        backgroundColor: (context: any) => {
-                          const chart = context.chart;
-                          const {ctx, chartArea} = chart;
-                          if (!chartArea) return 'transparent';
-                          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-                          gradient.addColorStop(0, 'rgba(16, 185, 129, 0.3)');
-                          gradient.addColorStop(0.5, 'rgba(16, 185, 129, 0.1)');
-                          gradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
-                          return gradient;
-                        },
-                        borderWidth: 4,
-                        fill: true,
-                        tension: 0.45,
-                        pointRadius: 0,
-                        pointHoverRadius: 6,
-                        pointHoverBackgroundColor: '#10b981',
-                        pointHoverBorderColor: '#fff',
-                        pointHoverBorderWidth: 3,
-                        hoverBorderWidth: 4
-                      }]
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: { 
-                      legend: { display: false },
-                      tooltip: {
-                        enabled: true,
-                        backgroundColor: 'rgba(9, 9, 11, 0.9)',
-                        titleFont: { size: 12, weight: 'bold' },
-                        bodyFont: { size: 14, weight: 'bold' },
-                        padding: 12,
-                        cornerRadius: 16,
-                        displayColors: false,
-                        callbacks: {
-                          label: (c) => ` ${currency === 'USD' ? '$' : '₴'}${c.parsed.y.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                        }
-                      }
-                    },
-                    scales: {
-                      x: { grid: { display: false }, border: { display: false }, ticks: { maxTicksLimit: 8, font: { size: 10, weight: 'bold' }, color: '#a1a1aa' } },
-                      y: { border: { display: false }, grid: { color: 'rgba(161, 161, 170, 0.1)', drawTicks: false }, ticks: { maxTicksLimit: 6, font: { size: 10, weight: 'bold' }, color: '#a1a1aa', callback: (v) => `${currency === 'USD' ? '$' : '₴'}${Number(v).toLocaleString()}` } }
-                    }
-                  }}
-                />
+                <div className="flex items-center justify-center h-full bg-zinc-800/20 rounded-3xl border border-dashed border-white/10">
+                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Chart Visualization Disabled</span>
+                </div>
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-zinc-400 uppercase tracking-widest opacity-50">Немає історичних даних</div>
               )}
@@ -1090,11 +1031,11 @@ export default function PortfolioView({
               className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 p-8 rounded-[32px] border border-indigo-200 dark:border-indigo-800/50 shadow-2xl overflow-y-auto max-h-[90vh]"
             >
               <div className="flex items-center justify-between mb-6">
-                <h4 className="text-lg font-black text-indigo-700 dark:text-indigo-400 uppercase tracking-tight">📥 Додати активи</h4>
+                <h4 className="text-lg font-black text-indigo-700 dark:text-indigo-400 uppercase tracking-tight">{t('addAssetsHeader')}</h4>
                 <button onClick={() => setShowAddForm(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-400"><X className="w-5 h-5" /></button>
               </div>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4 bg-indigo-50 dark:bg-indigo-900/20 p-2.5 rounded-lg border border-indigo-100 dark:border-indigo-800/40">
-                Внесіть існуючі активи без запису транзакції покупки.
+                {t('addAssetsDesc')}
               </p>
               {!addSelectedCrypto && !isBitbon ? (
                 <div>
@@ -1121,10 +1062,10 @@ export default function PortfolioView({
                     </div>
                   </div>
                   <div className="flex justify-end gap-2">
-                    <button onClick={() => { setShowAddForm(false); setAddSelectedCrypto(null); }} className="px-6 py-3 text-sm font-black text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl transition-all uppercase tracking-widest font-black">Скасувати</button>
+                    <button onClick={() => { setShowAddForm(false); setAddSelectedCrypto(null); }} className="px-6 py-3 text-sm font-black text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl transition-all uppercase tracking-widest font-black">{t('cancel')}</button>
                     <button onClick={handleAddExisting} disabled={((isBitbon && !editName) || (!isBitbon && addAmount <= 0)) || isSaving}
                       className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-2xl text-sm font-black transition-all shadow-xl shadow-indigo-500/30 uppercase tracking-widest font-black">
-                      {isSaving ? 'Збереження...' : `📥 Додати ${walletLabel}`}
+                      {isSaving ? t('saving') : `${t('addAssetsHeader')} ${walletLabel}`}
                     </button>
                   </div>
                 </div>
@@ -1138,13 +1079,13 @@ export default function PortfolioView({
         {showBuyForm && isCrypto && (
           <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl p-8 rounded-[32px] border border-emerald-200 dark:border-emerald-800/50 mb-6 shadow-2xl">
             <div className="flex items-center justify-between mb-6">
-              <h4 className="text-lg font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-tight">🛒 Купити криптоактив</h4>
+              <h4 className="text-lg font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-tight">🛒 {t('buyAction')} {isBitbon ? 'Bitbon' : t('asset')}</h4>
               <button onClick={() => setShowBuyForm(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-400"><X className="w-5 h-5" /></button>
             </div>
             {availableBalanceUsd !== undefined && (
               <div className="mb-4 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100 dark:border-indigo-800/50 text-sm">
-                <span className="text-indigo-600 dark:text-indigo-400">Доступний баланс: </span>
-                <span className="font-bold text-indigo-900 dark:text-indigo-100">{formatUsd(availableBalanceUsd)}</span>
+                <span className="text-indigo-600 dark:text-indigo-400">{t('availableAvailable')}: </span>
+                <span className="font-bold text-indigo-900 dark:text-zinc-100">{formatGlobal(availableBalanceUsd, globalCurrency, exchangeRates, 'USD')}</span>
               </div>
             )}
             {!selectedCrypto && !isBitbon ? (
@@ -1221,10 +1162,10 @@ export default function PortfolioView({
                 )}
 
                 <div className="flex justify-end gap-3">
-                  <button onClick={() => { setShowBuyForm(false); setSelectedCrypto(null); }} className="px-6 py-3 text-sm font-black text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl transition-all uppercase tracking-widest">Скасувати</button>
+                  <button onClick={() => { setShowBuyForm(false); setSelectedCrypto(null); }} className="px-6 py-3 text-sm font-black text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl transition-all uppercase tracking-widest">{t('cancel')}</button>
                   <button onClick={handleBuy} disabled={buyAmountUsd <= 0 || buyPrice <= 0 || isSaving || (isBitbon && !buyTargetWalletId)}
                     className="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-2xl text-sm font-black transition-all shadow-xl shadow-emerald-500/30 uppercase tracking-widest">
-                    {isSaving ? 'Збереження...' : `🛒 Підтвердити Купівлю`}
+                    {isSaving ? t('saving') : `🛒 ${t('confirmBuy')}`}
                   </button>
                 </div>
               </div>
@@ -1253,7 +1194,7 @@ export default function PortfolioView({
                   <div className="p-3 bg-indigo-600/10 rounded-2xl text-indigo-600">
                     <RefreshCw className="w-5 h-5" />
                   </div>
-                  <h3 className="text-xl font-black text-indigo-900 dark:text-zinc-100 uppercase tracking-tight">Перемістити Bitbon</h3>
+                  <h3 className="text-xl font-black text-indigo-900 dark:text-zinc-100 uppercase tracking-tight">{t('transfer')} Bitbon</h3>
                 </div>
                 <button onClick={() => setShowTransferForm(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-400"><X className="w-5 h-5" /></button>
               </div>
@@ -1261,7 +1202,7 @@ export default function PortfolioView({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                 <div className="space-y-6">
                   <div>
-                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">Звідки (Джерело)</label>
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">{t('source')}</label>
                     <div className="grid grid-cols-1 gap-2">
                       {assets.map(a => (
                         <button 
@@ -1279,7 +1220,7 @@ export default function PortfolioView({
                 
                 <div className="space-y-6">
                   <div>
-                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">Куди (Ціль)</label>
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">{t('target')}</label>
                     <div className="grid grid-cols-1 gap-2">
                       {assets.map(a => (
                         <button 
@@ -1296,7 +1237,7 @@ export default function PortfolioView({
               </div>
 
               <div className="bg-zinc-50 dark:bg-zinc-800/50 p-6 rounded-[24px] border border-zinc-200 dark:border-zinc-800 mb-8">
-                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">Кількість для переміщення</label>
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">{t('amountToTransfer')}</label>
                   <div className="flex items-center gap-4">
                     <div className="relative flex-1">
                       <input 
@@ -1318,13 +1259,13 @@ export default function PortfolioView({
               </div>
               
               <div className="flex justify-end gap-3 mt-8">
-                <button onClick={() => setShowTransferForm(false)} className="px-8 py-4 text-sm font-black text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl transition-all uppercase tracking-widest">Скасувати</button>
+                <button onClick={() => setShowTransferForm(false)} className="px-8 py-4 text-sm font-black text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl transition-all uppercase tracking-widest">{t('cancel')}</button>
                 <button 
                   onClick={handleTransfer} 
                   disabled={isSaving || transferAmount <= 0 || transferSourceId === transferTargetId || transferAmount > (assets.find(a => a.id === transferSourceId)?.amount || 0)}
                   className="px-10 py-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-2xl text-sm font-black transition-all shadow-xl shadow-indigo-500/30 uppercase tracking-widest"
                 >
-                  {isSaving ? 'Переміщення...' : '🚀 Підтвердити переміщення'}
+                  {isSaving ? t('saving') : `🚀 ${t('confirmTransfer')}`}
                 </button>
               </div>
             </motion.div>
@@ -1353,14 +1294,14 @@ export default function PortfolioView({
                   <div className="p-3 bg-red-600/10 rounded-2xl text-red-600">
                     <Minus className="w-5 h-5" />
                   </div>
-                  <h3 className="text-xl font-black text-red-700 dark:text-red-400 uppercase tracking-tight">Продати {isBitbon ? 'Bitbon' : walletLabel}</h3>
+                  <h3 className="text-xl font-black text-red-700 dark:text-red-400 uppercase tracking-tight">{t('sellAction')} {isBitbon ? 'Bitbon' : walletLabel}</h3>
                 </div>
                 <button onClick={() => setShowSellForm(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-400"><X className="w-5 h-5" /></button>
               </div>
               
               {!sellAsset ? (
                 <div>
-                  <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">Оберіть гаманець для продажу</label>
+                  <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">{t('chooseWalletToSell')}</label>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                     {assets.map(asset => (
                       <button key={asset.id} onClick={() => openSellForm(asset)}
@@ -1382,20 +1323,20 @@ export default function PortfolioView({
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="text-lg font-black">{sellAsset.name}</span>
-                        <span className="text-sm text-zinc-500">Доступно: {sellAsset.amount.toLocaleString()} BB</span>
+                        <span className="text-sm text-zinc-500">{t('available')}: {sellAsset.amount.toLocaleString()} BB</span>
                       </div>
                     </div>
-                    <button onClick={() => setSellAsset(null)} className="text-[10px] font-black uppercase text-blue-600 hover:underline">Змінити</button>
+                    <button onClick={() => setSellAsset(null)} className="text-[10px] font-black uppercase text-blue-600 hover:underline">{t('change')}</button>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
-                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">Дата продажу</label>
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">{t('sellDate')}</label>
                       <input type="date" value={sellDate} onChange={e => setSellDate(e.target.value)}
                         className="w-full px-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm font-bold" />
                     </div>
                     <div>
-                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">Кількість для продажу (BB)</label>
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">{t('amountToSell')} (BB)</label>
                       <div className="relative">
                         <input type="number" step="any" value={sellTokens || ''} onChange={e => handleSellTokensChange(Number(e.target.value))}
                           className="w-full px-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm font-bold" />
@@ -1403,34 +1344,34 @@ export default function PortfolioView({
                       </div>
                     </div>
                     <div>
-                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">Сума продажу ($)</label>
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">{t('sellAmountUsd')}</label>
                       <input type="number" step="any" value={sellAmountUsd || ''} onChange={e => handleSellUsdChange(Number(e.target.value))}
                         className="w-full px-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm font-bold" />
                     </div>
                     <div>
-                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">Ціна за 1 BB ($)</label>
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">{t('pricePerUnit')} BB ($)</label>
                       <input type="number" step="any" value={sellPrice || ''} onChange={e => { setSellPrice(Number(e.target.value)); if (sellTokens > 0) setSellAmountUsd(sellTokens * Number(e.target.value)); }}
                         className="w-full px-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm font-bold" />
                     </div>
                     {isBitbon && (
                       <div className="md:col-span-2">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">Курс долара (UAH/$)</label>
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">{t('usdRateUah')}</label>
                         <input type="number" step="any" value={sellUsdRate || ''} onChange={e => setSellUsdRate(Number(e.target.value))}
                           className="w-full px-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm font-bold" />
                       </div>
                     )}
                     <div className="md:col-span-2">
-                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">Примітка</label>
-                      <input type="text" value={sellNote} onChange={e => setSellNote(e.target.value)} placeholder="Коментар до транзакції..."
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">{t('note')}</label>
+                      <input type="text" value={sellNote} onChange={e => setSellNote(e.target.value)} placeholder={t('transactionComment')}
                         className="w-full px-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm" />
                     </div>
                   </div>
 
                   <div className="flex justify-end gap-3 mt-8">
-                    <button onClick={() => { setShowSellForm(false); setSellAsset(null); }} className="px-8 py-4 text-sm font-black text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl transition-all uppercase tracking-widest">Скасувати</button>
+                    <button onClick={() => { setShowSellForm(false); setSellAsset(null); }} className="px-8 py-4 text-sm font-black text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl transition-all uppercase tracking-widest">{t('cancel')}</button>
                     <button onClick={handleSell} disabled={sellTokens <= 0 || (sellAsset && sellTokens > sellAsset.amount) || isSaving}
                       className="px-10 py-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-2xl text-sm font-black transition-all shadow-xl shadow-red-500/30 uppercase tracking-widest">
-                      {isSaving ? 'Збереження...' : '🚀 Підтвердити продаж'}
+                      {isSaving ? t('saving') : `🚀 ${t('confirmSell')}`}
                     </button>
                   </div>
                 </div>
@@ -1459,51 +1400,51 @@ export default function PortfolioView({
                   <div className="p-3 bg-emerald-600/10 rounded-2xl text-emerald-600">
                     <TrendingUp className="w-5 h-5" />
                   </div>
-                  <h3 className="text-xl font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-tight">Нарахування для {incomeAsset?.name}</h3>
+                  <h3 className="text-xl font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-tight">{t('incomeFor')} {incomeAsset?.name}</h3>
                 </div>
                 <button onClick={() => setShowIncomeForm(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-400"><X className="w-5 h-5" /></button>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
-                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">Дата нарахування</label>
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">{t('incomeDate')}</label>
                   <input type="date" value={incomeDate} onChange={e => setIncomeDate(e.target.value)}
                     className="w-full px-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm font-bold" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">Кількість (BB)</label>
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">{t('amount')} (BB)</label>
                   <input type="number" step="any" value={incomeTokens || ''} onChange={e => handleIncomeTokensChange(Number(e.target.value))}
                     className="w-full px-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm font-bold" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">Еквівалент ($)</label>
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">{t('equivalentUsd')}</label>
                   <input type="number" step="any" value={incomeAmountUsd || ''} onChange={e => handleIncomeUsdChange(Number(e.target.value))}
                     className="w-full px-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm font-bold" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">Курс за 1 BB ($)</label>
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">{t('pricePerUnit')} BB ($)</label>
                   <input type="number" step="any" value={incomePrice || ''} onChange={e => { setIncomePrice(Number(e.target.value)); if (incomeTokens > 0) setIncomeAmountUsd(incomeTokens * Number(e.target.value)); }}
                     className="w-full px-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm font-bold" />
                 </div>
                 {isBitbon && (
                   <div className="md:col-span-2">
-                     <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">Курс долара (UAH/$)</label>
+                     <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">{t('usdRateUah')}</label>
                      <input type="number" step="any" value={incomeUsdRate || ''} onChange={e => setIncomeUsdRate(Number(e.target.value))}
                        className="w-full px-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm font-bold" />
                   </div>
                 )}
                 <div className="md:col-span-2">
-                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">Примітка / Джерело</label>
-                  <input type="text" value={incomeNote} onChange={e => setIncomeNote(e.target.value)} placeholder="Наприклад: Провайдинг, Бонус..."
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">{t('noteSource')}</label>
+                  <input type="text" value={incomeNote} onChange={e => setIncomeNote(e.target.value)} placeholder={t('exampleStakingBonus')}
                     className="w-full px-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm" />
                 </div>
               </div>
 
               <div className="flex justify-end gap-3 mt-8">
-                <button onClick={() => { setShowIncomeForm(false); setIncomeAsset(null); }} className="px-8 py-4 text-sm font-black text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl transition-all uppercase tracking-widest">Скасувати</button>
+                <button onClick={() => { setShowIncomeForm(false); setIncomeAsset(null); }} className="px-8 py-4 text-sm font-black text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl transition-all uppercase tracking-widest">{t('cancel')}</button>
                 <button onClick={handleIncome} disabled={incomeTokens <= 0 || isSaving}
                   className="px-10 py-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-2xl text-sm font-black transition-all shadow-xl shadow-emerald-500/30 uppercase tracking-widest">
-                  {isSaving ? 'Збереження...' : '✨ Підтвердити нарахування'}
+                  {isSaving ? t('saving') : `✨ ${t('confirmIncome')}`}
                 </button>
               </div>
             </motion.div>
@@ -1528,22 +1469,22 @@ export default function PortfolioView({
               className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 p-8 rounded-[32px] border border-zinc-200 dark:border-zinc-700 shadow-2xl overflow-y-auto max-h-[90vh]"
             >
               <div className="flex items-center justify-between mb-4">
-                <h4 className="text-sm font-medium">Редагувати {walletLabel}</h4>
+                <h4 className="text-sm font-medium">{t('editAsset')} {walletLabel}</h4>
                 <button onClick={() => setShowEditForm(false)} className="text-zinc-400 hover:text-zinc-600"><X className="w-4 h-4" /></button>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <div><label className="block text-xs text-zinc-500 mb-1">Назва</label><input type="text" value={editName} onChange={e => setEditName(e.target.value)} className="w-full px-3 py-2 text-sm rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent" /></div>
-                {isCrypto && <div><label className="block text-xs text-zinc-500 mb-1">Тикер</label><input type="text" value={editSymbol} onChange={e => setEditSymbol(e.target.value)} className="w-full px-3 py-2 text-sm rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent" /></div>}
-                <div><label className="block text-xs text-zinc-500 mb-1">Кількість</label><input type="number" step="any" value={editAmount || ''} onChange={e => setEditAmount(Number(e.target.value))} className="w-full px-3 py-2 text-sm rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent" /></div>
+                <div><label className="block text-xs text-zinc-500 mb-1">{t('name')}</label><input type="text" value={editName} onChange={e => setEditName(e.target.value)} className="w-full px-3 py-2 text-sm rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent" /></div>
+                {isCrypto && <div><label className="block text-xs text-zinc-500 mb-1">{t('ticker')}</label><input type="text" value={editSymbol} onChange={e => setEditSymbol(e.target.value)} className="w-full px-3 py-2 text-sm rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent" /></div>}
+                <div><label className="block text-xs text-zinc-500 mb-1">{t('amount')}</label><input type="number" step="any" value={editAmount || ''} onChange={e => setEditAmount(Number(e.target.value))} className="w-full px-3 py-2 text-sm rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent" /></div>
                 {isCrypto ? (
-                  <div><label className="block text-xs text-zinc-500 mb-1">Середня ціна ($)</label><input type="number" step="any" value={editAvgPrice || ''} onChange={e => setEditAvgPrice(Number(e.target.value))} className="w-full px-3 py-2 text-sm rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent" /></div>
+                  <div><label className="block text-xs text-zinc-500 mb-1">{t('avgPrice')}</label><input type="number" step="any" value={editAvgPrice || ''} onChange={e => setEditAvgPrice(Number(e.target.value))} className="w-full px-3 py-2 text-sm rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent" /></div>
                 ) : (
-                  <div><label className="block text-xs text-zinc-500 mb-1">Оціночна вартість ($)</label><input type="number" step="any" value={editCurrentPrice || ''} onChange={e => setEditCurrentPrice(Number(e.target.value))} className="w-full px-3 py-2 text-sm rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent" /></div>
+                  <div><label className="block text-xs text-zinc-500 mb-1">{t('estimatedValue')}</label><input type="number" step="any" value={editCurrentPrice || ''} onChange={e => setEditCurrentPrice(Number(e.target.value))} className="w-full px-3 py-2 text-sm rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent" /></div>
                 )}
               </div>
               <div className="flex justify-end gap-2">
-                <button onClick={() => setShowEditForm(false)} className="px-4 py-2 text-sm text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md">Скасувати</button>
-                <button onClick={handleEditSave} disabled={isSaving} className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-md font-medium">{isSaving ? 'Збереження...' : 'Зберегти'}</button>
+                <button onClick={() => setShowEditForm(false)} className="px-4 py-2 text-sm text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md">{t('cancel')}</button>
+                <button onClick={handleEditSave} disabled={isSaving} className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-md font-medium">{isSaving ? t('saving') : t('save')}</button>
               </div>
             </motion.div>
           </div>,
@@ -1556,13 +1497,13 @@ export default function PortfolioView({
             <table className="w-full text-sm text-left">
               <thead className="text-[10px] md:text-xs text-zinc-500 uppercase bg-zinc-100/50 dark:bg-zinc-800/50">
                 <tr>
-                  <th className="px-1.5 md:px-4 py-2 md:py-3 rounded-tl-lg">{isBitbon ? 'Гаманець' : 'Актив'}</th>
-                  <th className="px-1.5 md:px-4 py-2 md:py-3 text-center sm:text-left">К-сть</th>
-                  {isCrypto && <th className="hidden sm:table-cell px-4 py-3">Сер. ціна</th>}
-                  <th className="hidden sm:table-cell px-4 py-3">Поточна</th>
-                  <th className="px-1.5 md:px-4 py-2 md:py-3 font-bold text-zinc-900 dark:text-zinc-100">Вартість</th>
-                  {isCrypto && <th className="hidden lg:table-cell px-4 py-3">Прибуток</th>}
-                  <th className="px-1.5 md:px-4 py-2 md:py-3 rounded-tr-lg text-right">Дії</th>
+                  <th className="px-1.5 md:px-4 py-2 md:py-3 rounded-tl-lg">{isBitbon ? t('calcBitbon') : t('asset')}</th>
+                  <th className="px-1.5 md:px-4 py-2 md:py-3 text-center sm:text-left">{t('amountShort')}</th>
+                  {isCrypto && <th className="hidden sm:table-cell px-4 py-3">{t('avgPriceShort')}</th>}
+                  <th className="hidden sm:table-cell px-4 py-3">{t('currentPriceShort')}</th>
+                  <th className="px-1.5 md:px-4 py-2 md:py-3 font-bold text-zinc-900 dark:text-zinc-100">{t('valueTitle')}</th>
+                  {isCrypto && <th className="hidden lg:table-cell px-4 py-3">{t('profitTitle')}</th>}
+                  <th className="px-1.5 md:px-4 py-2 md:py-3 rounded-tr-lg text-right">{t('actionTitle')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1603,7 +1544,7 @@ export default function PortfolioView({
                               </div>
                               <div className="flex items-center gap-2 mt-0.5">
                                 {a.symbol && <span className="text-[9px] text-zinc-500 uppercase font-medium">{a.symbol}</span>}
-                                {purchaseDate && <span className="text-[9px] text-blue-500 font-bold uppercase tracking-tight">Куплено {purchaseDate}</span>}
+                                {purchaseDate && <span className="text-[9px] text-blue-500 font-bold uppercase tracking-tight">{t('buyAction')} {purchaseDate}</span>}
                               </div>
                             </div>
                           </div>
@@ -1612,11 +1553,11 @@ export default function PortfolioView({
                           {a.amount < 1 ? a.amount.toFixed(4) : a.amount.toLocaleString('uk-UA', { maximumFractionDigits: 2 })}
                           <div className="sm:hidden flex flex-col gap-0.5 mt-1">
                             <div className="text-[8px] opacity-70 flex items-center gap-1">
-                              <span className="uppercase text-[6px] px-1 bg-zinc-100 dark:bg-zinc-800 rounded">Сер</span>
+                              <span className="uppercase text-[6px] px-1 bg-zinc-100 dark:bg-zinc-800 rounded">{t('avgPriceShort')}</span>
                               {formatPrice(a.avgPrice)}
                             </div>
                             <div className="text-[8px] font-bold text-blue-500 flex items-center gap-1">
-                              <span className="uppercase text-[6px] px-1 bg-blue-50 dark:bg-blue-900/30 rounded">Лайв</span>
+                              <span className="uppercase text-[6px] px-1 bg-blue-50 dark:bg-blue-900/30 rounded">{t('currentPriceShort')}</span>
                               {formatPrice(a.livePrice)}
                             </div>
                           </div>
@@ -1638,7 +1579,7 @@ export default function PortfolioView({
                         )}
                         <td className="px-1.5 md:px-4 py-2 md:py-3 text-right" onClick={e => e.stopPropagation()}>
                           <div className="flex justify-end gap-0.5 md:gap-1">
-                            {isCrypto && isBitbon && <button onClick={() => openIncomeForm(asset)} title="Нарахування" className="p-1 md:p-2 text-zinc-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"><TrendingUp className="w-3 h-3 md:w-4 md:h-4" /></button>}
+                            {isCrypto && isBitbon && <button onClick={() => openIncomeForm(asset)} title={t('income')} className="p-1 md:p-2 text-zinc-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"><TrendingUp className="w-3 h-3 md:w-4 md:h-4" /></button>}
                             {isCrypto && !isBitbon && <button onClick={() => handleBuyExisting(asset)} className="p-1 md:p-2 text-zinc-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"><ShoppingCart className="w-3 h-3 md:w-4 md:h-4" /></button>}
                             <button onClick={() => handleEdit(asset)} className="p-1 md:p-2 text-zinc-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"><Edit2 className="w-3 h-3 md:w-4 md:h-4" /></button>
                             <button onClick={() => onDeleteAsset(asset.id)} className="p-1 md:p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"><Trash2 className="w-3 h-3 md:w-4 md:h-4" /></button>
@@ -1651,21 +1592,21 @@ export default function PortfolioView({
                           <td colSpan={7} className="px-4 py-4">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                               <div className="bg-white dark:bg-zinc-900 p-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                                <div className="text-[10px] text-zinc-500 uppercase mb-1">Вкладено</div>
+                                <div className="text-[10px] text-zinc-500 uppercase mb-1">{t('invested')}</div>
                                 <div className="text-sm font-bold">{formatUsd(a.invested)}</div>
                               </div>
                               <div className="bg-white dark:bg-zinc-900 p-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                                <div className="text-[10px] text-zinc-500 uppercase mb-1">Поточна вартість</div>
+                                <div className="text-[10px] text-zinc-500 uppercase mb-1">{t('currentValue')}</div>
                                 <div className="text-sm font-bold">{formatUsd(a.currentValue)}</div>
                               </div>
                               <div className="bg-white dark:bg-zinc-900 p-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                                <div className="text-[10px] text-zinc-500 uppercase mb-1">Прибуток</div>
+                                <div className="text-[10px] text-zinc-500 uppercase mb-1">{t('profit')}</div>
                                 <div className={`text-sm font-bold ${a.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                                   {a.profit >= 0 ? '+' : ''}{formatUsd(a.profit)}
                                 </div>
                               </div>
                               <div className="bg-white dark:bg-zinc-900 p-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                                <div className="text-[10px] text-zinc-500 uppercase mb-1">Доля портфеля</div>
+                                <div className="text-[10px] text-zinc-500 uppercase mb-1">{t('shareTitle')}</div>
                                 <div className="text-sm font-bold">{share.toFixed(1)}%</div>
                                 <div className="mt-1 h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
                                   <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(share, 100)}%` }} />
@@ -1674,7 +1615,7 @@ export default function PortfolioView({
                               {a.metadata?.lastSync && (
                                 <div className="col-span-2 md:col-span-4 mt-2 px-1">
                                   <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-widest leading-relaxed">
-                                    Остання синхронізація: {new Date(a.metadata.lastSync).toLocaleString('uk-UA')} · Джерело: {a.metadata.source || 'Manual'}
+                                    {t('lastSync')}: {new Date(a.metadata.lastSync).toLocaleString('uk-UA')} · {t('source')}: {a.metadata.source || 'Manual'}
                                   </p>
                                 </div>
                               )}
@@ -1690,14 +1631,14 @@ export default function PortfolioView({
           </div>
         ) : (
           <div className="text-center py-12 text-zinc-500">
-            <p>Немає {walletLabel}ів у цьому портфелі.</p>
+            <p>{t('noAssetsInPortfolio')}</p>
             <button onClick={() => { 
                if (isBitbon) {
                  setSelectedCrypto({ name: 'Bitbon', symbol: 'BB' }); setBuyAmountUsd(100); setBuyPrice(1); setShowBuyForm(true);
                } else {
                  setShowBuyForm(true); setSelectedCrypto(null); 
                }
-            }} className="mt-2 text-emerald-600 hover:underline text-sm">Купити перший {walletLabel}</button>
+            }} className="mt-2 text-emerald-600 hover:underline text-sm">{t('buyFirstAsset')}</button>
           </div>
         )}
         </div>
@@ -1705,45 +1646,47 @@ export default function PortfolioView({
         {/* Delete Confirmation Modal */}
         <AnimatePresence>
           {confirmDeleteAssetId && createPortal(
-            <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setConfirmDeleteAssetId(null)}
-                className="absolute inset-0 bg-zinc-950/60 backdrop-blur-md"
-              />
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-[32px] p-8 shadow-2xl border border-zinc-200 dark:border-white/5 text-center"
-              >
-                <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <Trash2 className="w-8 h-8" />
-                </div>
-                <h3 className="text-xl font-black text-zinc-900 dark:text-white uppercase tracking-tighter mb-2">Видалити {walletLabel}?</h3>
-                <p className="text-sm font-bold text-zinc-400 mb-8 uppercase tracking-widest leading-relaxed">Цю дію неможливо буде скасувати. Всі дані про цей {walletLabel} будуть видалені з історії.</p>
-                
-                <div className="flex gap-4">
-                  <button 
-                    onClick={() => setConfirmDeleteAssetId(null)}
-                    className="flex-1 py-4 text-xs font-black uppercase tracking-widest text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl transition-all"
-                  >
-                    Скасувати
-                  </button>
-                  <button 
-                    onClick={() => {
-                      onDeleteAsset(confirmDeleteAssetId);
-                      setConfirmDeleteAssetId(null);
-                    }}
-                    className="flex-1 py-4 bg-red-500 hover:bg-red-600 text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-red-500/20 transition-all hover:scale-105 active:scale-95"
-                  >
-                    Видалити
-                  </button>
-                </div>
-              </motion.div>
-            </div>,
+            (
+              <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setConfirmDeleteAssetId(null)}
+                  className="absolute inset-0 bg-zinc-950/60 backdrop-blur-md"
+                />
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                  className="relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-[32px] p-8 shadow-2xl border border-zinc-200 dark:border-white/5 text-center"
+                >
+                  <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <Trash2 className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-xl font-black text-zinc-900 dark:text-white uppercase tracking-tighter mb-2">{t('deleteConfirm')}</h3>
+                  <p className="text-sm font-bold text-zinc-400 mb-8 uppercase tracking-widest leading-relaxed">{t('deleteConfirmDesc')}</p>
+                  
+                  <div className="flex gap-4">
+                    <button 
+                      onClick={() => setConfirmDeleteAssetId(null)}
+                      className="flex-1 py-4 text-xs font-black uppercase tracking-widest text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl transition-all"
+                    >
+                      {t('cancel')}
+                    </button>
+                    <button 
+                      onClick={() => {
+                        onDeleteAsset(confirmDeleteAssetId);
+                        setConfirmDeleteAssetId(null);
+                      }}
+                      className="flex-1 py-4 bg-red-500 hover:bg-red-600 text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-red-500/20 transition-all hover:scale-105 active:scale-95"
+                    >
+                      {t('deleteAction')}
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            ),
             document.body
           )}
         </AnimatePresence>

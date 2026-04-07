@@ -49,6 +49,8 @@ export type Transaction = {
   source?: string;
 };
 
+export type AccountType = 'cards' | 'jars' | 'goals' | 'investments' | 'savings' | 'cushion' | 'credit';
+
 export type Account = {
   id: string;
   name: string;
@@ -59,6 +61,7 @@ export type Account = {
   bankAccountId?: string;
   isInvestment?: boolean;
   creditLimit?: number;
+  type?: AccountType;
 };
 
 export type BankConnection = {
@@ -84,7 +87,7 @@ export type BudgetCategory = {
 
 export type BudgetTx = {
   id: string;
-  type: 'income' | 'expense' | 'transfer' | 'adjustment' | 'investment' | 'cushion' | 'goal';
+  type: 'income' | 'expense' | 'transfer' | 'adjustment' | 'investment' | 'invest' | 'cushion' | 'goal';
   date: string;
   time?: string;
   amount: number;
@@ -99,6 +102,8 @@ export type BudgetTx = {
   isAiCategorized?: boolean;
   isIncoming?: boolean;
   mcc?: number; // Monobank Merchant Category Code
+  goalId?: string; // Linked goal ID for goal transactions
+  cushionAssetId?: string; // Linked cushion asset ID for cushion transactions
 };
 
 export type BitbonAllocation = {
@@ -126,12 +131,24 @@ export type MonthlyPlan = {
   plans: Record<string, number>; // { [categoryId]: plannedAmount }
 };
 
+export type CushionAsset = {
+  id: string;
+  name: string;
+  type: 'cash' | 'deposit' | 'bond' | 'other';
+  amount: number; // Фактична сума (скільки реально вкладено)
+  targetAmount: number; // Планова ціль
+  interestRate: number; // annual %
+  color: string;
+  updatedAt: string;
+};
+
 export type Cushion = {
   id: string;
   targetAmount: number;
   monthlyContribution: number;
   linkedJarIds: string[]; // Monobank Jar IDs
   linkedAccountIds: string[]; // Internal account IDs
+  assets?: CushionAsset[]; // Manual assets like Deposits, Bonds
   updatedAt: string;
 };
 export type PortfolioTransaction = {

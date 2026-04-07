@@ -1,144 +1,174 @@
 @import "tailwindcss";
 
 @layer base {
-  /* ===== 🌅 Theme: Золотий Ранок (Default) — Warm honey & cream ===== */
+  /* ============================================================ */
+  /* 🌅 ТЕМА: ЗОЛОТИЙ РАНОК (Default)                             */
+  /* Елітна медова палітра, тепле світло та кремові акценти       */
+  /* ============================================================ */
   :root {
-    --color-zinc-50: var(--color-stone-50);
-    --color-zinc-100: var(--color-stone-100);
-    --color-zinc-200: var(--color-stone-200);
-    --color-zinc-300: var(--color-stone-300);
-    --color-zinc-400: var(--color-stone-400);
-    --color-zinc-500: var(--color-stone-500);
-    --color-zinc-600: var(--color-stone-600);
-    --color-zinc-700: var(--color-stone-700);
-    --color-zinc-800: var(--color-stone-800);
-    --color-zinc-900: var(--color-stone-900);
-    --color-zinc-950: var(--color-stone-950);
+    --background: 40 33% 98%;
+    --foreground: 20 20% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 20 20% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 20% 10%;
+    --primary: 38 92% 50%; /* Golden Amber */
+    --primary-foreground: 40 33% 98%;
+    --secondary: 40 20% 92%;
+    --secondary-foreground: 20 20% 10%;
+    --muted: 40 10% 95%;
+    --muted-foreground: 20 10% 45%;
+    --accent: 45 100% 96%;
+    --accent-foreground: 38 92% 40%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 38 50% 90%;
+    --input: 38 50% 90%;
+    --ring: 38 92% 50%;
+    --radius: 1rem;
 
-    --color-blue-50: #fff8ed;
-    --color-blue-100: #ffefd4;
-    --color-blue-400: #f59e0b;
-    --color-blue-500: #d97706;
-    --color-blue-600: #b45309;
-    --color-blue-700: #92400e;
-    --color-blue-900: #451a03;
+    --app-bg: linear-gradient(135deg, #fffbf2 0%, #fef3c7 50%, #fde68a 100%);
+    --app-bg-dark: linear-gradient(135deg, #0c0a09 0%, #1c1917 50%, #0c0a09 100%);
 
-    --app-bg: linear-gradient(145deg, #fffbf4 0%, #fef3c7 40%, #fde68a 100%);
-    --app-bg-dark: linear-gradient(145deg, #1c1507 0%, #2d1f08 50%, #3d2c0a 100%);
+    /* Safe Areas & Spacing */
+    --safe-bottom: env(safe-area-inset-bottom, 24px);
+    --safe-top: env(safe-area-inset-top, 24px);
+    --header-h: 64px;
+    --nav-h: 80px;
+
+    /* Z-Index Layers - Guaranteed to be over everything */
+    --z-header: 100;
+    --z-dock: 1000;
+    --z-dropdown: 10000;
+    --z-overlay: 10500;
+    --z-modal: 11000;
+    --z-toast: 12000;
+    --z-tooltip: 13000;
   }
 
-  /* ===== 🔮 Theme: Неоновий Схід — Deep slate + electric orange ===== */
-  [data-theme="neon-sunrise"] {
-    --color-zinc-50: var(--color-slate-50);
-    --color-zinc-100: var(--color-slate-100);
-    --color-zinc-200: var(--color-slate-200);
-    --color-zinc-300: var(--color-slate-300);
-    --color-zinc-400: var(--color-slate-400);
-    --color-zinc-500: var(--color-slate-500);
-    --color-zinc-600: var(--color-slate-600);
-    --color-zinc-700: var(--color-slate-700);
-    --color-zinc-800: var(--color-slate-800);
-    --color-zinc-900: var(--color-slate-900);
-    --color-zinc-950: var(--color-slate-950);
-
-    --color-blue-50: #fff7ed;
-    --color-blue-100: #ffedd5;
-    --color-blue-400: #fb923c;
-    --color-blue-500: #f97316;
-    --color-blue-600: #ea580c;
-    --color-blue-700: #c2410c;
-    --color-blue-900: #7c2d12;
-
-    --app-bg: linear-gradient(145deg, #fdf4ff 0%, #fce7d8 40%, #ffd6a5 100%);
-    --app-bg-dark: linear-gradient(145deg, #0d1117 0%, #1a0f1e 40%, #2d1500 100%);
+  /* Smooth Theme Transition Global Settings */
+  html, body, #root, div, section, nav, button, input {
+    transition: background 0.6s cubic-bezier(0.4, 0, 0.2, 1), 
+                color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                backdrop-filter 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* ===== 🌿 Theme: Сандалове Дерево — Rich terracotta & spice ===== */
-  [data-theme="amber-glass"] {
-    --color-zinc-50: #fafaf9;
-    --color-zinc-100: #f5f2ef;
-    --color-zinc-200: #e8e0d8;
-    --color-zinc-300: #d4c8bb;
-    --color-zinc-400: #a89282;
-    --color-zinc-500: #8b7465;
-    --color-zinc-600: #6e5a4e;
-    --color-zinc-700: #534438;
-    --color-zinc-800: #3d2e27;
-    --color-zinc-900: #2a1d18;
-    --color-zinc-950: #1a0f0c;
-
-    --color-blue-50: #fff7f0;
-    --color-blue-100: #ffeee0;
-    --color-blue-400: #d97556;
-    --color-blue-500: #c4603d;
-    --color-blue-600: #a84f30;
-    --color-blue-700: #8c4028;
-    --color-blue-900: #541c0d;
-
-    --app-bg: linear-gradient(145deg, #fdf6f0 0%, #f5e6d8 40%, #edd9c4 100%);
-    --app-bg-dark: linear-gradient(145deg, #1a1008 0%, #2d1a0d 50%, #3d2410 100%);
+  body {
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    overscroll-behavior-y: none;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    background: var(--app-bg) fixed;
+    color: hsl(var(--foreground));
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
   }
 
-  /* ===== 🌺 Theme: Рожева Магнолія — Blush rose & soft pink ===== */
-  [data-theme="crimson-velvet"] {
-    --color-zinc-50: #fff5f7;
-    --color-zinc-100: #fde8ed;
-    --color-zinc-200: #fbc9d4;
-    --color-zinc-300: #f9a8b8;
-    --color-zinc-400: #e47a93;
-    --color-zinc-500: #c85c77;
-    --color-zinc-600: #a84060;
-    --color-zinc-700: #883050;
-    --color-zinc-800: #5e1f38;
-    --color-zinc-900: #3a1025;
-    --color-zinc-950: #200a15;
-
-    --color-blue-50: #fff0f5;
-    --color-blue-100: #ffe1ec;
-    --color-blue-400: #f472a4;
-    --color-blue-500: #e11d72;
-    --color-blue-600: #c4155e;
-    --color-blue-700: #a01050;
-    --color-blue-900: #5c0832;
-
-    --app-bg: linear-gradient(145deg, #fff5f7 0%, #ffe4ec 40%, #ffd6e4 100%);
-    --app-bg-dark: linear-gradient(145deg, #1a0812 0%, #2d0e1e 50%, #40122a 100%);
+  html {
+    height: 100%;
   }
 
-  /* ===== 🌙 Theme: Місячна Аура — Midnight indigo + lavender glow ===== */
-  [data-theme="cyber-peach"] {
-    --color-zinc-50: #f5f3ff;
-    --color-zinc-100: #ede9fe;
-    --color-zinc-200: #ddd6fe;
-    --color-zinc-300: #c4b5fd;
-    --color-zinc-400: #a78bfa;
-    --color-zinc-500: #8b5cf6;
-    --color-zinc-600: #7c3aed;
-    --color-zinc-700: #6d28d9;
-    --color-zinc-800: #4c1d95;
-    --color-zinc-900: #2e1065;
-    --color-zinc-950: #1a0840;
+  #root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: calc(var(--nav-h) + var(--safe-bottom));
+  }
 
-    --color-blue-50: #faf5ff;
-    --color-blue-100: #f3e8ff;
-    --color-blue-400: #c084fc;
-    --color-blue-500: #a855f7;
-    --color-blue-600: #9333ea;
-    --color-blue-700: #7e22ce;
-    --color-blue-900: #4a1d96;
+  @media (min-width: 768px) {
+    #root { padding-bottom: 0; }
+  }
 
-    --app-bg: linear-gradient(145deg, #faf5ff 0%, #f0e6ff 40%, #e8d5ff 100%);
-    --app-bg-dark: linear-gradient(145deg, #0d0820 0%, #1a0f3d 50%, #250d4a 100%);
+  /* --- 🌊 THEME: OCEAN --- */
+  .theme-ocean {
+    --background: 200 100% 98%;
+    --foreground: 222 47% 11%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 100%;
+    --app-bg: linear-gradient(135deg, #f0f9ff 0%, #bae6fd 100%);
+    --app-bg-dark: linear-gradient(135deg, #082f49 0%, #0c4a6e 100%);
+  }
+
+  /* --- 🌇 THEME: SUNSET --- */
+  .theme-sunset {
+    --background: 20 100% 98%;
+    --foreground: 20 50% 10%;
+    --primary: 15 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --app-bg: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+    --app-bg-dark: linear-gradient(135deg, #431407 0%, #7c2d12 100%);
+  }
+
+  /* --- 🌲 THEME: FOREST --- */
+  .theme-forest {
+    --background: 140 50% 98%;
+    --foreground: 160 50% 5%;
+    --primary: 160 84% 23%;
+    --primary-foreground: 0 0% 100%;
+    --app-bg: linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 100%);
+    --app-bg-dark: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+  }
+
+  /* --- ⚡ THEME: CYBERPUNK --- */
+  .theme-cyberpunk {
+    --background: 280 60% 2%;
+    --foreground: 280 20% 98%;
+    --primary: 320 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --app-bg: linear-gradient(135deg, #09090b 0%, #1e1b4b 100%);
+    --app-bg-dark: linear-gradient(135deg, #09090b 0%, #1e1b4b 100%);
   }
 }
 
+/* iOS Style Premium Effects */
+.ios-dock {
+  background: rgba(255, 255, 255, 0.05); /* Very subtle */
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.12);
+  margin-bottom: var(--safe-bottom);
+  border-radius: 40px 40px 0 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .ios-dock {
+    background: rgba(0, 0, 0, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+}
+
+.ios-icon-container {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1.25rem; /* ~20px */
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.ios-icon-container::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
+  border-radius: inherit;
+}
+
 .theme-bg {
-  background: var(--app-bg);
+  background: var(--app-bg) fixed !important;
 }
 
 @media (prefers-color-scheme: dark) {
   .theme-bg {
-    background: var(--app-bg-dark);
+    background: var(--app-bg-dark) fixed !important;
   }
 }
 /* ===== ✨ Premium Glassmorphism & Effects ===== */
@@ -217,4 +247,60 @@
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
   }
+}
+/* Category Select Smooth Design */
+.premium-select-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 16px;
+}
+
+@media (min-width: 640px) {
+  .premium-select-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.category-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.category-chip.active {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  transform: scale(1.05);
+}
+
+.category-chip:active {
+  transform: scale(0.95);
+}
+
+/* 💥 Final Precise Mobile Clarity Fix: Hide ONLY tagged dashboard backgrounds */
+body.modal-view-open [data-main-header],
+body.modal-view-open [data-main-ticker] {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Ensure the modal is properly distanced from the top on mobile */
+body.modal-view-open .fixed.inset-0 {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  padding-top: clamp(40px, 8vh, 80px) !important;
+  padding-bottom: env(safe-area-inset-bottom, 24px);
+  overflow-y: auto !important;
 }

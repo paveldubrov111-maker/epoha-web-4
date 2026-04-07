@@ -1,10 +1,8 @@
 import { BudgetCategory, BudgetTx } from '../types';
 
 export const CATEGORY_KEYWORDS: Record<string, string[]> = {
-  'Продукти': ['silpo', 'atb', 'varus', 'novus', 'ashan', 'metro', 'fozzy', 'market', 'produkty', 'їжа', 'food', 'супермаркет', 'магазин'],
   'Транспорт': ['uber', 'bolt', 'uklon', 'taxi', 'пальне', 'gas', 'azk', 'wog', 'okko', 'socar', 'книжка', 'метро', 'автобус'],
   'Розваги': ['netflix', 'spotify', 'youtube', 'steam', 'psn', 'cinema', 'кіно', 'театр', 'парк', 'ігри', 'games'],
-  'Ресторани': ['mcdonalds', 'kfc', 'burger', 'pizza', 'sushi', 'cafe', 'кафе', 'ресторан', 'бар', 'кока-кола', 'coffee', 'кава'],
   'Житло': ['комуналка', 'оренда', 'rent', 'gas', 'water', 'electricity', 'інтернет', 'lanet', 'triolan', 'kyivstar'],
   'Здоров\'я': ['apteka', 'аптека', 'ліки', 'doctor', 'лікар', 'стоматолог', 'hospital', 'аналізи'],
   'Покупки': ['rozetka', 'prom', 'aliexpress', 'amazon', 'zara', 'h&m', 'одяг', 'clothes', 'shop'],

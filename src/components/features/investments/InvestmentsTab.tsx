@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { TrendingUp, PieChart } from 'lucide-react';
-import { Currency, Language, PortfolioType } from '../../../types';
+import { Currency, Language, PortfolioType, PortfolioTransaction } from '../../../types';
 import CalculatorsTab from './Calculators/CalculatorsTab';
 import AnalyticsTab from './Analytics/AnalyticsTab';
-// HMR Force Update: bitbon-tx-fix-v4
 
 interface InvestmentsTabProps {
   language: Language;
@@ -39,63 +38,69 @@ interface InvestmentsTabProps {
   theme: string;
   bitbonPortfolio: any;
   onUpdateInvestmentPotential: (val: number) => void;
+  onWithdrawFromInvestment: (amountUah: number, accountId: string) => Promise<void>;
+  accounts: any[];
+  portfolioTransactions: PortfolioTransaction[];
+  isManualPriceMode: boolean;
+  setIsManualPriceMode: (val: boolean) => void;
+  manualPriceValue: number;
+  setManualPriceValue: (val: number) => void;
+  connectedPotentialAccountId: string | null;
+  onConnectPotentialAccount: (id: string | null) => void;
 }
 
 const InvestmentsTab: React.FC<InvestmentsTabProps> = (props) => {
   const { onPortfolioTx, ...otherProps } = props;
   const [activeTab, setActiveTab] = useState<'calculators' | 'analytics'>('analytics');
-  // Removed local bCur state as per user request to use global currency from header
 
   return (
-    <div className="space-y-8">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm">
-        {/* Top Level Tabs */}
-        <div className="flex flex-wrap gap-2 mb-6">
+    <div className="bg-transparent backdrop-blur-none rounded-[2.5rem] border-none p-0 md:p-0 shadow-none">
+      <div className="flex bg-zinc-100/50 dark:bg-black/20 p-2 rounded-3xl border border-white/5 shadow-inner mb-8 w-fit">
+        <div className="flex items-center gap-1 bg-white dark:bg-zinc-800 p-1 rounded-[1.25rem] border border-zinc-200/50 dark:border-white/5 shadow-sm">
           <button
             onClick={() => setActiveTab('calculators')}
-            className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors border ${
+            className={`px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2 ${
               activeTab === 'calculators'
-                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800'
-                : 'bg-transparent border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
             }`}
           >
-            <span className="flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Калькулятори</span>
+            <TrendingUp className="w-3.5 h-3.5" />
+            {props.t('tabCalculators')}
           </button>
           <button
             onClick={() => setActiveTab('analytics')}
-            className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors border ${
+            className={`px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2 ${
               activeTab === 'analytics'
-                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800'
-                : 'bg-transparent border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
             }`}
           >
-            <span className="flex items-center gap-2"><PieChart className="w-4 h-4" /> Аналітика</span>
+            <PieChart className="w-3.5 h-3.5" />
+            {props.t('tabAnalytics')}
           </button>
         </div>
-
-        {activeTab === 'calculators' ? (
-          <CalculatorsTab 
-            language={props.language}
-            t={props.t}
-            livePrice={props.livePrice}
-            isLoadingPrice={props.isLoadingPrice}
-            priceError={props.priceError}
-            fetchPrice={props.fetchPrice}
-            exchangeRates={props.exchangeRates}
-          />
-        ) : (
-          <AnalyticsTab 
-            {...otherProps}
-            onPortfolioTx={onPortfolioTx}
-            portfolioAssets={props.portfolioAssets}
-            bCur={props.globalCurrency}
-            bPrice={props.livePrice || 0.45} // Fallback if live price unavailable
-            bUsdRate={props.exchangeRates['UAH'] || 40}
-            bitbonPortfolio={props.bitbonPortfolio}
-            onUpdateInvestmentPotential={props.onUpdateInvestmentPotential}
-          />
-        )}
       </div>
+
+      {activeTab === 'calculators' ? (
+        <CalculatorsTab 
+          language={props.language}
+          t={props.t}
+          livePrice={props.livePrice}
+          isLoadingPrice={props.isLoadingPrice}
+          priceError={props.priceError}
+          fetchPrice={props.fetchPrice}
+          exchangeRates={props.exchangeRates}
+        />
+      ) : (
+        <AnalyticsTab 
+          {...props}
+          onPortfolioTx={onPortfolioTx}
+          bCur={props.globalCurrency}
+          bPrice={props.livePrice || 0.45}
+          bUsdRate={props.exchangeRates['UAH'] || 40}
+        />
+      )}
     </div>
   );
 };

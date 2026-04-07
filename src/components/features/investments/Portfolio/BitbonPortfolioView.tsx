@@ -1,108 +1,216 @@
 import React, { useState, useMemo } from 'react';
-import { createPortal } from 'react-dom';
-import { Line } from 'react-chartjs-2';
+import { 
+  Line, 
+  Doughnut 
+} from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
-  BarElement,
-  ArcElement,
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
+  ArcElement
 } from 'chart.js';
-import { 
-  Plus, 
-  Minus, 
-  Coins, 
-  Trash2, 
-  TrendingUp, 
-  PieChart, 
-  Activity, 
-  History as HistoryIcon,
-  Target,
-  Calendar,
-  X,
-  FileText,
-  ArrowUpRight,
-  ArrowDownRight,
-  Wallet
-} from 'lucide-react';
-import MonthlyReportView from './MonthlyReportView';
-import { motion, AnimatePresence } from 'motion/react';
-import { Currency, PortfolioAsset } from '../../../../types';
-import { commonChartOptions } from '../../../../constants/charts';
-import { fmt, fmtUsd } from '../../../../utils/format';
-import LocalNumberInput from '../../../ui/LocalNumberInput';
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
-  BarElement,
-  ArcElement,
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
+  ArcElement
 );
+import { 
+  Plus, 
+  Search, 
+  Trash2, 
+  RefreshCw, 
+  Info, 
+  TrendingUp, 
+  ChevronRight, 
+  ExternalLink, 
+  AlertCircle,
+  DownloadCloud,
+  Minus, 
+  Coins, 
+  PieChart, 
+  Activity, 
+  History as HistoryIcon,
+  Target,
+  X,
+  FileText,
+  ArrowUpRight,
+  ArrowDownLeft,
+  ArrowLeftRight,
+  Wallet,
+  Check,
+  Edit2
+} from 'lucide-react';
+import MonthlyReportView from './MonthlyReportView';
+import { motion, AnimatePresence } from 'motion/react';
+import { Currency, PortfolioAsset } from '../../../../types';
+
+import { commonChartOptions } from '../../../../constants/charts';
+import { formatGlobal } from '../../../../utils/format';
+import LocalNumberInput from '../../../ui/LocalNumberInput';
 
 interface BitbonPortfolioViewProps {
   portfolio: any;
   bCur: Currency;
   bUsdRate: number;
   livePrice: number;
-  distributionData?: any;
   assets: PortfolioAsset[];
   onAddTx: (type: 'buy' | 'sell' | 'income' | 'transfer', data: any) => void;
-  onDeleteTx: (id: string) => void;
   onAddAsset: (asset: Omit<PortfolioAsset, 'id' | 'updatedAt'>) => void;
-  onDeleteAsset: (id: string) => void;
+  onUpdateAsset?: (id: string, updates: any) => Promise<void>;
+  onDeleteAsset?: (id: string) => Promise<void>;
+  onDeleteTx: (id: string) => void;
   onConfirmDeleteAsset?: (id: string) => void;
   onConfirmDeleteTx?: (id: string) => void;
+  language?: any;
+  t?: (key: string) => string;
+  isManualPriceMode: boolean;
+  setIsManualPriceMode: (val: boolean) => void;
+  manualPriceValue: number;
+  setManualPriceValue: (val: number) => void;
+  distributionData?: any;
+  isLoadingPrice?: boolean;
+  priceError?: boolean;
+  fetchPrice?: () => void;
+  exchangeRates?: Record<string, number>;
+  accounts: any[];
   availableBalanceUsd?: number;
+  availableBalanceUah?: number;
+  connectedPotentialAccountId?: string | null;
+  formatGlobal: (n: number, targetCur: Currency, rates: Record<string, number>, sourceCur?: Currency, maxDecimals?: number, compact?: boolean) => string;
+  globalCurrency: Currency;
 }
+
 const BitbonPortfolioView: React.FC<BitbonPortfolioViewProps> = ({
   portfolio,
   bCur,
   bUsdRate,
   livePrice,
-  distributionData,
   assets,
   onAddTx,
-  onDeleteTx,
   onAddAsset,
-  onDeleteAsset,
+  onUpdateAsset,
+  onDeleteTx,
   onConfirmDeleteAsset,
   onConfirmDeleteTx,
-  availableBalanceUsd
+  language,
+  t = (k: string) => k,
+  isManualPriceMode,
+  setIsManualPriceMode,
+  manualPriceValue,
+  setManualPriceValue,
+  distributionData,
+  isLoadingPrice,
+  fetchPrice,
+  accounts,
+  availableBalanceUah,
+  connectedPotentialAccountId,
+  formatGlobal,
+  globalCurrency,
+  exchangeRates
 }) => {
   const chartIdSuffix = useMemo(() => Math.random().toString(36).substring(2, 9), []);
   const [activeSubTab, setActiveSubTab] = useState<'overview' | 'analysis' | 'distribution' | 'history' | 'reports'>('overview');
+  const [isEditingPrice, setIsEditingPrice] = useState(false);
+  const [tempPrice, setTempPrice] = useState(manualPriceValue.toString());
+
+  // Sync tempPrice with global manualPriceValue when not editing
+  React.useEffect(() => {
+    if (!isEditingPrice) {
+      setTempPrice(manualPriceValue.toString());
+    }
+  }, [manualPriceValue, isEditingPrice]);
+
+  const effectivePrice = isManualPriceMode ? manualPriceValue : (livePrice || 0);
+
+  const monthlyIncomeTokens = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.toISOString().slice(0, 7); // YYYY-MM
+    return (portfolio?.transactions || [])
+      .filter((tx: any) => tx.type === 'income' && tx.date.startsWith(currentMonth))
+      .reduce((sum: number, tx: any) => sum + (tx.tokens || 0), 0);
+  }, [portfolio?.transactions]);
+
+  const [targetPrice20y, setTargetPrice20y] = useState<number>(effectivePrice > 0 ? effectivePrice * 5 : 2.0);
+  const [addedMonthlyUsd, setAddedMonthlyUsd] = useState<number>(0);
   const [showTxForm, setShowTxForm] = useState<'buy' | 'sell' | 'income' | 'transfer' | null>(null);
+  
+  const [historyFilter, setHistoryFilter] = useState<'all' | 'income' | 'trade' | 'transfer'>('all');
+  const [historyAssetFilter, setHistoryAssetFilter] = useState<string>('all');
+  const [txError, setTxError] = useState<string | null>(null);
+
+  const calculatedAssets = useMemo(() => {
+    const palette = ['#4f46e5', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#8b5cf6', '#3b82f6', '#f97316'];
+    
+    return assets.map((asset, idx) => {
+      let color = palette[idx % palette.length];
+      const name = asset.name.toLowerCase();
+      
+      if (name.includes('genesis')) color = '#10b981'; // Emerald
+      else if (name.includes('provid') || name.includes('майнінг')) color = '#4f46e5'; // Indigo
+      else if (name.includes('wallet') || name.includes('гаманець')) color = '#f59e0b'; // Amber
+      else if (name.includes('trade') || name.includes('трейдінг')) color = '#3b82f6'; // Blue
+      else if (name.includes('sale') || name.includes('продаж')) color = '#ec4899'; // Rose
+      else if (name.includes('erbb')) color = '#06b6d4'; // Cyan
+
+      return {
+        ...asset,
+        amount: asset.amount || 0,
+        color
+      } as PortfolioAsset & { color: string };
+    }).sort((a, b) => b.amount - a.amount);
+  }, [assets]);
+
   const [showAddAssetForm, setShowAddAssetForm] = useState(false);
   const [newAssetName, setNewAssetName] = useState('');
   
-  // Стан форми
   const [txDate, setTxDate] = useState(new Date().toISOString().split('T')[0]);
   const [txAmount, setTxAmount] = useState(100);
   const [txTokens, setTxTokens] = useState(10);
-  const [txPrice, setTxPrice] = useState(livePrice);
+  const [txPrice, setTxPrice] = useState(effectivePrice);
   const [txUsdRate, setTxUsdRate] = useState(bUsdRate);
   const [txSource, setTxSource] = useState('');
-  const [txError, setTxError] = useState<string | null>(null);
   const [txAssetId, setTxAssetId] = useState<string>('');
   const [txFromAssetId, setTxFromAssetId] = useState<string>('');
   const [txToAssetId, setTxToAssetId] = useState<string>('');
   const [txNote, setTxNote] = useState('');
+  const [txBudgetAccountId, setTxBudgetAccountId] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [chartRange, setChartRange] = useState<'6m' | '1y'>('6m');
 
-  // Стан аналізу
-  const [annualGrowthRate, setAnnualGrowthRate] = useState(5.5); 
+  React.useEffect(() => {
+    if (showTxForm === 'buy' || showTxForm === 'sell') {
+      setTxPrice(effectivePrice);
+      setTxUsdRate(bUsdRate);
+      setTxDate(new Date().toISOString().split('T')[0]);
+      syncTokensToAmount(txTokens, effectivePrice, bUsdRate);
+    } else if (showTxForm === 'transfer' || showTxForm === 'income') {
+      setTxDate(new Date().toISOString().split('T')[0]);
+    }
+  }, [showTxForm, effectivePrice, bUsdRate]);
+
+  const filteredChartLabels = useMemo(() => {
+    if (!portfolio?.chartLabels) return [];
+    return chartRange === '6m' ? portfolio.chartLabels.slice(-180) : portfolio.chartLabels;
+  }, [portfolio?.chartLabels, chartRange]);
+
+  const filteredChartData = useMemo(() => {
+    if (!portfolio?.chartTokens) return [];
+    const baseData = chartRange === '6m' ? portfolio.chartTokens.slice(-180) : portfolio.chartTokens;
+    return baseData.map((v: number) => formatGlobal(v, globalCurrency, exchangeRates, 'USD'));
+  }, [portfolio?.chartTokens, chartRange, formatGlobal]);
 
   const syncAmountToTokens = (amt: number, price: number, rate: number) => {
     const amtUsd = bCur === 'USD' ? amt : amt / rate;
@@ -116,22 +224,18 @@ const BitbonPortfolioView: React.FC<BitbonPortfolioViewProps> = ({
 
   const handleAmountChange = (val: number) => {
     setTxAmount(val);
-    syncAmountToTokens(val, txPrice, txUsdRate);
+    syncAmountToTokens(val, txPrice, bUsdRate);
   };
 
   const handleTokensChange = (val: number) => {
     setTxTokens(val);
-    syncTokensToAmount(val, txPrice, txUsdRate);
+    syncTokensToAmount(val, txPrice, bUsdRate);
   };
 
   const handleSaveTx = async () => {
     if (showTxForm === 'transfer') {
       if (!txFromAssetId || !txToAssetId || txTokens <= 0) {
-        setTxError('Заповніть усі поля переказу');
-        return;
-      }
-      if (txFromAssetId === txToAssetId) {
-        setTxError('Рахунки повинні бути різними');
+        setTxError(t('fillTransferFields'));
         return;
       }
       setIsSaving(true);
@@ -144,55 +248,38 @@ const BitbonPortfolioView: React.FC<BitbonPortfolioViewProps> = ({
           portfolioId: portfolio.id,
           note: txNote,
           amountUsd: 0,
-          priceUsd: livePrice
+          priceUsd: effectivePrice
         });
-        
         setShowTxForm(null);
-        setTxError(null);
-        setTxNote('');
       } catch (err: any) {
-        setTxError(err.message || 'Помилка при збереженні переказу');
+        setTxError(err.message || 'Error');
       } finally {
         setIsSaving(false);
       }
     } else {
       if (!txAssetId || txTokens <= 0) {
-        setTxError('Виберіть категорію та введіть кількість');
+        setTxError(t('selectCategoryAndAmount'));
         return;
       }
-      
-      if (txPrice > 10) {
-        setTxError('Ціна виглядає занадто високою (> $10). Перевірте дані.');
-        return;
-      }
-      
-      if (txAmount > 1000000) {
-        setTxError('Сума занадто велика. Перевірте дані.');
-        return;
-      }
-
-      const amountUsd = bCur === 'USD' ? txAmount : txAmount / txUsdRate;
-
+      const amountUsd = txTokens * txPrice;
       setIsSaving(true);
       try {
         await onAddTx(showTxForm!, {
           portfolioId: portfolio.id,
           assetId: txAssetId,
-          symbol: 'ERBB',
+          symbol: 'BITBON',
           date: txDate,
           amountUsd,
           tokens: txTokens,
           priceUsd: txPrice,
           usdRate: txUsdRate,
           source: txSource,
+          budgetAccountId: txBudgetAccountId,
           note: txNote
         });
-
         setShowTxForm(null);
-        setTxError(null);
-        setTxNote('');
       } catch (err: any) {
-        setTxError(err.message || 'Помилка при збереженні операції');
+        setTxError(err.message || 'Error');
       } finally {
         setIsSaving(false);
       }
@@ -204,48 +291,44 @@ const BitbonPortfolioView: React.FC<BitbonPortfolioViewProps> = ({
     onAddAsset({
       portfolioId: portfolio.id,
       name: newAssetName.trim(),
-      symbol: 'ERBB',
+      symbol: 'BITBON',
       amount: 0,
       averagePrice: 0.45,
-      currentPrice: livePrice
+      currentPrice: effectivePrice,
+      metadata: {}
     });
     setNewAssetName('');
     setShowAddAssetForm(false);
   };
 
-  // Дані розподілу
   const distribution = useMemo(() => {
-    if (!assets) return [];
-    return assets.map(a => ({
+    return calculatedAssets.map(a => ({
       id: a.id,
       name: a.name,
       value: a.amount,
-      color: a.name.toLowerCase().includes('provid') ? '#4f46e5' : 
-             a.name.toLowerCase().includes('genesis') ? '#10b981' : 
-             a.name.toLowerCase().includes('sale') ? '#ec4899' : '#f59e0b'
+      color: a.color
     }));
-  }, [assets]);
+  }, [calculatedAssets]);
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Під-навігація */}
-      <div className="flex bg-zinc-100/50 dark:bg-zinc-800/50 p-1 rounded-2xl border border-zinc-200/50 dark:border-white/5 w-full overflow-x-auto no-scrollbar">
-        <div className="flex min-w-max">
+      <div className="bg-zinc-100/50 dark:bg-zinc-800/50 p-1.5 rounded-[24px] border border-zinc-200/50 dark:border-white/5 w-full">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-row gap-1.5">
           {[
-            { id: 'overview', label: 'Огляд', icon: Activity },
-            { id: 'distribution', label: 'Розподіл', icon: PieChart },
-            { id: 'history', label: 'Історія', icon: HistoryIcon },
-            { id: 'reports', label: 'Звіти', icon: FileText },
-            { id: 'analysis', label: 'Аналіз (20р)', icon: Activity }
-          ].map(tab => (
+            { id: 'overview', label: t('overview'), icon: Activity },
+            { id: 'distribution', label: t('distribution'), icon: PieChart },
+            { id: 'history', label: t('history'), icon: HistoryIcon },
+            { id: 'reports', label: t('reports'), icon: FileText },
+            { id: 'analysis', label: t('analysis'), icon: Activity }
+          ].map((tab, idx) => (
             <button
               key={tab.id}
               onClick={() => setActiveSubTab(tab.id as any)}
-              className={`flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black transition-all ${
+              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black transition-all uppercase tracking-widest ${
                 activeSubTab === tab.id 
-                  ? 'bg-white dark:bg-zinc-900 text-indigo-600 dark:text-indigo-400 shadow-xl' 
-                  : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
-              }`}
+                  ? 'bg-white dark:bg-zinc-900 text-indigo-600 dark:text-indigo-400 shadow-xl border border-zinc-200/50 dark:border-white/10' 
+                  : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 border border-transparent'
+              } ${idx >= 3 ? 'sm:col-span-1' : ''}`}
             >
               <tab.icon className="w-3.5 h-3.5" />
               {tab.label}
@@ -256,650 +339,685 @@ const BitbonPortfolioView: React.FC<BitbonPortfolioViewProps> = ({
 
       <AnimatePresence mode="wait">
         {activeSubTab === 'overview' && (
-          <motion.div
-            key="overview"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-          >
+          <motion.div key="overview" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              <div className="bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl p-8 rounded-[32px] border border-zinc-200/50 dark:border-white/5 shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 blur-3xl rounded-full -mr-10 -mt-10 pointer-events-none" />
+              <div className="bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl p-8 rounded-[40px] border border-zinc-200/50 dark:border-white/5 shadow-2xl relative overflow-hidden group/hero">
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                  <div className="absolute -top-[20%] -right-[10%] w-[60%] h-[60%] bg-indigo-500/10 blur-[120px] rounded-full" />
+                  <div className="absolute -bottom-[20%] -left-[10%] w-[50%] h-[50%] bg-emerald-500/10 blur-[100px] rounded-full" />
+                </div>
                 
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                        <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(79,70,229,0.8)]" />
-                       <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none">Портфель Bitbon</span>
+                       <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none">{t('bitbonPortfolio')}</span>
                     </div>
-                    <div className="text-4xl font-black text-zinc-900 dark:text-white tracking-tighter mb-1">
-                      {fmt(bCur === 'USD' ? (portfolio?.valueUsd || 0) : (portfolio?.valueUah || 0), bCur)}
+                    <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 mb-1">
+                      <div className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white tracking-tighter drop-shadow-sm">
+                        {formatGlobal(portfolio?.tokens * effectivePrice || 0, globalCurrency, exchangeRates, 'USD')}
+                      </div>
+                      
+                      <div className="flex-shrink-0">
+                        <div className="flex flex-row items-center gap-2 md:gap-3">
+                          {/* Segmented Control / Toggle */}
+                          <div className="bg-zinc-200/80 dark:bg-white/10 p-1 rounded-2xl border border-zinc-300 dark:border-white/10 flex items-center shadow-inner relative overflow-hidden">
+                            <motion.div 
+                              className="absolute bg-white dark:bg-zinc-700 shadow-md border border-zinc-200 dark:border-white/10"
+                              initial={false}
+                              animate={{ 
+                                x: isManualPriceMode ? '101%' : '0%',
+                                width: '48.5%'
+                              }}
+                              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                              style={{ top: 4, bottom: 4, left: 4 }}
+                            />
+                            
+                            <button 
+                              onClick={() => setIsManualPriceMode(false)}
+                              className={`relative z-10 px-3 md:px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors ${!isManualPriceMode ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400'}`}
+                            >
+                              Market
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setIsManualPriceMode(true);
+                                setIsEditingPrice(true);
+                              }}
+                              className={`relative z-10 px-3 md:px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors ${isManualPriceMode ? 'text-amber-600' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400'}`}
+                            >
+                              Manual
+                            </button>
+                          </div>
+
+                          {/* Manual Input Field - Only when in manual mode */}
+                          <AnimatePresence mode="popLayout">
+                            {isManualPriceMode && (
+                              <motion.div
+                                initial={{ opacity: 0, x: 10, scale: 0.95 }}
+                                animate={{ opacity: 1, x: 0, scale: 1 }}
+                                exit={{ opacity: 0, x: 10, scale: 0.95 }}
+                                className="flex items-center gap-2 bg-white dark:bg-zinc-800 p-1.5 pl-3 rounded-2xl shadow-xl border border-amber-500/30 group/pricein"
+                              >
+                                <span className="text-[10px] font-black text-amber-500">$</span>
+                                <input 
+                                  type="text"
+                                  value={tempPrice}
+                                  onChange={(e) => {
+                                    setTempPrice(e.target.value);
+                                    const val = parseFloat(e.target.value);
+                                    if (!isNaN(val)) setManualPriceValue(val);
+                                  }}
+                                  className="w-14 bg-transparent border-none outline-none text-sm font-black text-zinc-900 dark:text-white"
+                                />
+                                {tempPrice !== manualPriceValue.toString() && (
+                                  <button 
+                                    onClick={() => {
+                                      const val = parseFloat(tempPrice);
+                                      if (!isNaN(val)) setManualPriceValue(val);
+                                    }}
+                                    className="p-1.5 bg-amber-500 text-white rounded-lg shadow-lg hover:bg-amber-600 transition-colors"
+                                  >
+                                    <Check className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+
+                          {/* Refresh Trigger for live mode */}
+                          {!isManualPriceMode && (
+                            <motion.button
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              whileHover={{ rotate: 180 }}
+                              onClick={() => fetchPrice?.()}
+                              className="p-2 mr-1 rounded-xl bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 hover:bg-indigo-500/20 shadow-sm"
+                              title="Оновити ціну"
+                            >
+                              <RefreshCw className={`w-3.5 h-3.5 ${isLoadingPrice ? 'animate-spin' : ''}`} />
+                            </motion.button>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-xs font-bold text-emerald-500 flex items-center gap-1">
-                      <Target className="w-3 h-3" /> {(portfolio?.tokens || 0).toFixed(4)} ERBB
+
+                    <div className="flex items-center gap-3">
+                      <div className="text-[10px] md:text-xs font-bold text-emerald-500 flex items-center gap-1.5 bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/20 shadow-sm">
+                        <Target className="w-3.5 h-3.5" /> {(portfolio?.tokens || 0).toFixed(4)} ERBB
+                      </div>
                     </div>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => { 
-                        setShowTxForm('buy'); setTxAmount(100); setTxPrice(livePrice); setTxUsdRate(bUsdRate); setTxError(null);
-                        setTxAssetId(assets.find(a => a.name.toLowerCase().includes('provid'))?.id || assets[0]?.id || '');
-                      }}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-2xl text-xs font-black uppercase tracking-widest hover:scale-105 transition-all active:scale-95 shadow-lg"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> Купити
-                    </button>
-                    <button
-                      onClick={() => { 
-                        setShowTxForm('sell'); setTxAmount(100); setTxPrice(livePrice); setTxUsdRate(bUsdRate); setTxError(null); 
-                        setTxAssetId(assets.find(a => a.name.toLowerCase().includes('sale'))?.id || assets[0]?.id || '');
-                      }}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 text-red-600 rounded-2xl text-xs font-black uppercase tracking-widest border border-red-500/20 hover:bg-red-500/20 transition-all"
-                    >
-                      <Minus className="w-3.5 h-3.5" /> Продати
-                    </button>
-                    <button
-                      onClick={() => { 
-                        setShowTxForm('income'); setTxTokens(10); setTxPrice(livePrice); setTxSource(''); setTxError(null);
-                        setTxAssetId(assets.find(a => a.name.toLowerCase().includes('provid'))?.id || assets[0]?.id || '');
-                      }}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-emerald-600 hover:scale-105 transition-all shadow-lg shadow-emerald-500/20"
-                    >
-                      <Coins className="w-3.5 h-3.5" /> Дохід
-                    </button>
-                    <button
-                      onClick={() => { 
-                        setShowTxForm('transfer'); setTxTokens(10); setTxPrice(livePrice); setTxError(null);
-                      }}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 hover:scale-105 transition-all shadow-lg shadow-blue-500/20"
-                    >
-                      <Activity className="w-3.5 h-3.5 rotate-90" /> Переказ
-                    </button>
+                    <button onClick={() => setShowTxForm('buy')} className="flex items-center gap-2 px-5 py-2.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-2xl text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg"><Plus className="w-3.5 h-3.5" /> {t('buyAction')}</button>
+                    <button onClick={() => setShowTxForm('sell')} className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 text-red-600 rounded-2xl text-xs font-black uppercase tracking-widest border border-red-500/20 hover:bg-red-500/20 transition-all"><Minus className="w-3.5 h-3.5" /> {t('sellAction')}</button>
+                    <button onClick={() => setShowTxForm('transfer')} className="flex items-center gap-2 px-5 py-2.5 bg-blue-500/10 text-blue-600 rounded-2xl text-xs font-black uppercase tracking-widest border border-blue-500/20 hover:bg-blue-500/20 transition-all"><ArrowLeftRight className="w-3.5 h-3.5" /> {t('transferAction') || 'Переказ'}</button>
+                    <button onClick={() => setShowTxForm('income')} className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-emerald-600 shadow-lg"><Coins className="w-3.5 h-3.5" /> {t('incomeAction')}</button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-10 pt-8 border-t border-zinc-200/50 dark:border-white/5 relative z-10">
-                  <div className="p-4 bg-zinc-50/50 dark:bg-zinc-800/50 rounded-2xl md:bg-transparent md:p-0 md:rounded-none">
-                    <div className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-2">Актуальна ціна</div>
-                    <div className="text-lg font-black text-zinc-900 dark:text-white">{fmtUsd(livePrice)}</div>
-                  </div>
-                  <div className="p-4 bg-zinc-50/50 dark:bg-zinc-800/50 rounded-2xl md:bg-transparent md:p-0 md:rounded-none">
-                    <div className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-2">Загальна інвестиція</div>
-                    <div className="text-lg font-black text-zinc-900 dark:text-white">{fmt(bCur === 'USD' ? portfolio.investedUsd : portfolio.investedUah, bCur)}</div>
-                  </div>
-                  <div className={`p-4 rounded-2xl md:p-4 transition-colors ${portfolio.avgPriceUsd > 10 ? 'bg-red-500/10 border border-red-500/20' : 'bg-zinc-50/50 dark:bg-zinc-800/50'}`}>
-                    <div className="flex items-center justify-between mb-2">
-                       <div className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Сер. ціна купівлі</div>
-                       {portfolio.avgPriceUsd > 10 && (
-                         <div className="text-[8px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded uppercase tracking-tighter animate-pulse">Помилка в даних?</div>
-                       )}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 pt-6 border-t border-zinc-200/20 dark:border-white/5 relative z-10">
+                   {[
+                    { label: t('marketPrice'), value: formatGlobal(effectivePrice, globalCurrency, exchangeRates, 'USD'), icon: TrendingUp, color: 'text-indigo-500', isMarket: true },
+                    { label: 'Дохід за місяць', value: `${monthlyIncomeTokens.toFixed(2)} ERBB`, icon: Coins, color: 'text-emerald-500', isIncome: true },
+                    { label: t('totalInvestment'), value: formatGlobal(portfolio.investedUsd, globalCurrency, exchangeRates, 'USD'), icon: Wallet, color: 'text-zinc-500' },
+                    { label: t('totalProfit'), value: formatGlobal(portfolio?.tokens * effectivePrice - portfolio.investedUsd, globalCurrency, exchangeRates, 'USD', 2), icon: Activity, color: (portfolio?.tokens * effectivePrice - portfolio.investedUsd) >= 0 ? 'text-emerald-500' : 'text-rose-500' }
+                  ].map((stat, i) => (
+                    <div key={i} className={`p-4 bg-white/40 dark:bg-white/5 rounded-2xl border border-white/20 dark:border-white/5 shadow-sm transition-all ${stat.isMarket ? (isManualPriceMode ? 'ring-2 ring-indigo-500/50 bg-indigo-50/30' : '') : ''}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">{stat.label}</div>
+                        {stat.isMarket ? (
+                           <TrendingUp className={`w-3 h-3 ${stat.color} opacity-60`} />
+                         ) : (
+                          <stat.icon className={`w-3 h-3 ${stat.color} opacity-60`} />
+                        )}
+                      </div>
+                      <div className={`text-base font-black tracking-tight ${stat.color.includes('emerald') || stat.color.includes('rose') ? stat.color : 'text-zinc-900 dark:text-white'}`}>
+                        {stat.value}
+                        {stat.isIncome && (
+                          <div className="text-[9px] font-bold text-zinc-400 opacity-60 mt-0.5 whitespace-nowrap">
+                            ≈ {formatGlobal(monthlyIncomeTokens * effectivePrice, globalCurrency, exchangeRates, 'USD')}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className={`text-lg font-black ${portfolio.avgPriceUsd > 10 ? 'text-red-500' : 'text-zinc-900 dark:text-white'}`}>
-                      {fmtUsd(portfolio.avgPriceUsd)}
-                    </div>
-                  </div>
-                  <div className="p-4 bg-zinc-50/50 dark:bg-zinc-800/50 rounded-2xl md:bg-transparent md:p-0 md:rounded-none">
-                    <div className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-2">Прибуток</div>
-                    <div className={`text-lg font-black ${portfolio.profitUsd >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                      {portfolio.profitUsd >= 0 ? '+' : ''}{fmt(bCur === 'USD' ? portfolio.profitUsd : portfolio.profitUah, bCur)}
-                    </div>
-                  </div>
+                  ))}
                 </div>
-
-                <AnimatePresence>
-                  {showTxForm && createPortal(
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6">
-                      <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={() => setShowTxForm(null)}
-                        className="absolute inset-0 bg-zinc-950/60 backdrop-blur-md"
-                      />
-                      <motion.div 
-                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 p-8 rounded-[32px] border border-zinc-200 dark:border-white/5 shadow-2xl overflow-y-auto max-h-[90vh]"
-                      >
-                        <div className="max-w-md mx-auto min-h-full flex flex-col justify-center py-10 md:py-0">
-                          <div className="flex justify-between items-center mb-6">
-                             <h4 className="text-sm font-black uppercase tracking-[0.2em] text-zinc-800 dark:text-zinc-100">
-                               {showTxForm === 'buy' ? '🟢 Нова покупка' : showTxForm === 'sell' ? '🔴 Новий продаж' : showTxForm === 'transfer' ? '🔵 Переказ ERBB' : '🧬 Дохід ERBB'}
-                             </h4>
-                             <button onClick={() => setShowTxForm(null)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors">
-                               <X className="w-4 h-4 text-zinc-400" />
-                             </button>
-                          </div>
-
-                          {availableBalanceUsd !== undefined && showTxForm === 'buy' && (
-                            <div className="mb-6 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-800/50 flex justify-between items-center">
-                              <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Доступний потенціал</span>
-                              <span className="text-sm font-black text-indigo-900 dark:text-indigo-100">{fmtUsd(availableBalanceUsd)}</span>
-                            </div>
-                          )}
-
-                          <div className="grid grid-cols-2 gap-4 mb-8">
-                            {showTxForm === 'transfer' ? (
-                              <>
-                                <div className="col-span-2">
-                                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 block">Звідки (Джерело)</label>
-                                  <select 
-                                    value={txFromAssetId}
-                                    onChange={e => setTxFromAssetId(e.target.value)}
-                                    className="w-full bg-zinc-100 dark:bg-zinc-800 border-none rounded-2xl px-4 py-3 text-sm font-black focus:ring-2 ring-blue-500/20 outline-none"
-                                  >
-                                    <option value="">Виберіть блок...</option>
-                                    {(assets || []).map(a => (
-                                      <option key={a.id} value={a.id}>{a.name} ({a.amount.toFixed(2)})</option>
-                                    ))}
-                                  </select>
-                                </div>
-                                <div className="col-span-2">
-                                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 block">Куди (Отримувач)</label>
-                                  <select 
-                                    value={txToAssetId}
-                                    onChange={e => setTxToAssetId(e.target.value)}
-                                    className="w-full bg-zinc-100 dark:bg-zinc-800 border-none rounded-2xl px-4 py-3 text-sm font-black focus:ring-2 ring-blue-500/20 outline-none"
-                                  >
-                                    <option value="">Виберіть блок...</option>
-                                    {(assets || []).map(a => (
-                                      <option key={a.id} value={a.id}>{a.name}</option>
-                                    ))}
-                                  </select>
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <div className={showTxForm === 'income' ? 'col-span-2' : ''}>
-                                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 block">Категорія (Актив)</label>
-                                  <select 
-                                    value={txAssetId}
-                                    onChange={(e) => setTxAssetId(e.target.value)}
-                                    className="w-full bg-zinc-100 dark:bg-zinc-800 border-none rounded-2xl px-4 py-3 text-sm font-black focus:ring-2 ring-indigo-500/20 outline-none"
-                                  >
-                                    {(assets || []).map(a => (
-                                      <option key={a.id} value={a.id}>{a.name}</option>
-                                    ))}
-                                  </select>
-                                </div>
-                                <div className={showTxForm === 'income' ? 'col-span-2' : ''}>
-                                   <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 block">Дата</label>
-                                   <input type="date" value={txDate} onChange={e => setTxDate(e.target.value)} className="w-full bg-zinc-100 dark:bg-zinc-800 border-none rounded-2xl px-4 py-3 text-sm font-black" />
-                                </div>
-                              </>
-                            )}
-
-                            <div className="col-span-2">
-                               <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 block">Кількість ERBB</label>
-                               <div className="relative">
-                                 <LocalNumberInput value={txTokens} onChange={handleTokensChange} className="w-full bg-zinc-100 dark:bg-zinc-800 border-none rounded-2xl px-6 py-4 text-xl font-black focus:ring-2 ring-indigo-500/20" />
-                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black text-zinc-400 uppercase tracking-widest">Token</div>
-                               </div>
-                            </div>
-
-                            {(showTxForm === 'buy' || showTxForm === 'sell') && (
-                              <div className="col-span-2">
-                                 <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 block">Сума ({bCur})</label>
-                                 <div className="relative">
-                                   <LocalNumberInput value={txAmount} onChange={handleAmountChange} className="w-full bg-zinc-100 dark:bg-zinc-800 border-none rounded-2xl px-6 py-4 text-lg font-black focus:ring-2 ring-indigo-500/20" />
-                                   <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black text-zinc-400 uppercase tracking-widest">{bCur}</div>
-                                 </div>
-                              </div>
-                            )}
-
-                            {showTxForm === 'income' && (
-                              <div className="col-span-2">
-                                 <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 block">Джерело доходу</label>
-                                 <input type="text" value={txSource} onChange={e => setTxSource(e.target.value)} placeholder="Наприклад: Майнінг, Реферальні" className="w-full bg-zinc-100 dark:bg-zinc-800 border-none rounded-2xl px-4 py-3 text-sm font-black" />
-                              </div>
-                            )}
-
-                            <div className="col-span-2">
-                               <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 block">Примітка</label>
-                               <input type="text" value={txNote} onChange={e => setTxNote(e.target.value)} placeholder="Коментар до операції..." className="w-full bg-zinc-100 dark:bg-zinc-800 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-2 ring-indigo-500/20" />
-                            </div>
-                          </div>
-
-                          {txError && (
-                            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-[11px] font-bold text-red-500 text-center animate-in fade-in zoom-in-95">
-                              {txError}
-                            </div>
-                          )}
-
-                          <div className="flex gap-4">
-                            <button 
-                              onClick={() => setShowTxForm(null)} 
-                              disabled={isSaving}
-                              className="flex-1 px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest text-zinc-500 hover:bg-zinc-100 transition-colors disabled:opacity-50"
-                            >
-                              Скасувати
-                            </button>
-                            <button 
-                              onClick={handleSaveTx} 
-                              disabled={isSaving}
-                              className="flex-1 px-6 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02] disabled:opacity-50 disabled:scale-100"
-                            >
-                              {isSaving ? 'Збереження...' : 'Зберегти'}
-                            </button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    </div>,
-                    document.body
-                  )}
-                </AnimatePresence>
               </div>
 
-              <div className="bg-white/40 dark:bg-zinc-900/40 p-8 rounded-[32px] border border-zinc-200/50 dark:border-white/5 shadow-xl">
+              <div className="bg-white/60 dark:bg-zinc-900/60 p-8 rounded-[40px] border border-zinc-200/50 dark:border-white/5 shadow-2xl">
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-3">
                     <HistoryIcon className="w-4 h-4 text-indigo-500" />
-                    <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none">Розвиток портфеля</h4>
-                  </div>
-                  <div className="flex bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl">
-                     <button className="px-3 py-1 text-[10px] font-black text-indigo-600 dark:text-indigo-400 bg-white dark:bg-zinc-900 rounded-lg shadow-sm">6 МІС</button>
-                     <button className="px-3 py-1 text-[10px] font-black text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors">1 РІК</button>
+                    <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none">{t('portfolioDevelopment')}</h4>
                   </div>
                 </div>
-                <div className="h-[280px] w-full relative">
-                  <Line
-                    id={`bitbon-portfolio-overview-${chartIdSuffix}`}
-                    key={`bitbon-portfolio-overview-${chartIdSuffix}`}
+                <div className="h-[300px] w-full">
+                  <Line 
                     data={{
-                      labels: portfolio.chartLabels,
-                      datasets: [
-                        {
-                          label: 'Вартість',
-                          data: (portfolio?.chartTokens || []).map((v: number) => bCur === 'USD' ? v : v * bUsdRate),
-                          borderColor: '#4f46e5',
-                          backgroundColor: 'rgba(79,70,229,0.1)',
-                          fill: true,
-                          tension: 0.4,
-                          pointRadius: 0,
-                          borderWidth: 3
-                        }
-                      ]
+                      labels: filteredChartLabels.map(l => {
+                        const d = new Date(l);
+                        if (isNaN(d.getTime())) return l;
+                        return d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
+                      }),
+                      datasets: [{
+                        label: t('valueTitle'),
+                        data: filteredChartData.map(v => isManualPriceMode ? (v / (livePrice || 1)) * manualPriceValue : v),
+                        borderColor: '#4f46e5',
+                        backgroundColor: (context) => {
+                          const chart = context.chart;
+                          const {ctx, chartArea} = chart;
+                          if (!chartArea) return 'rgba(79, 70, 229, 0.1)';
+                          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                          gradient.addColorStop(0, 'rgba(79, 70, 229, 0.2)');
+                          gradient.addColorStop(1, 'rgba(79, 70, 229, 0)');
+                          return gradient;
+                        },
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#4f46e5',
+                        pointHoverBorderColor: '#fff',
+                        pointHoverBorderWidth: 2
+                      }]
                     }}
                     options={{
-                      ...commonChartOptions,
+                      ...commonChartOptions, 
                       maintainAspectRatio: false,
-                      plugins: {
-                        ...commonChartOptions.plugins,
-                        legend: { display: false }
+                      scales: {
+                        ...commonChartOptions.scales,
+                        x: {
+                          ...commonChartOptions.scales?.x,
+                          grid: { display: false },
+                          ticks: {
+                            ...commonChartOptions.scales?.x?.ticks,
+                            maxRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: 8,
+                            font: { size: 10, weight: 'bold' }
+                          }
+                        },
+                        y: {
+                          ...commonChartOptions.scales?.y,
+                          grid: { color: 'rgba(255,255,255,0.05)' },
+                          ticks: {
+                            ...commonChartOptions.scales?.y?.ticks,
+                            font: { size: 10 }
+                          }
+                        }
                       }
-                    }}
+                    } as any}
                   />
                 </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-white/60 dark:bg-zinc-900/60 p-8 rounded-[32px] border border-zinc-200/50 dark:border-white/5 shadow-xl relative overflow-hidden">
+                <Doughnut 
+                  data={{
+                    labels: distribution.map(d => d.name),
+                    datasets: [{
+                      data: distribution.map(d => d.value),
+                      backgroundColor: distribution.map(d => d.color),
+                      borderWidth: 0
+                    }]
+                  }}
+                  options={{ cutout: '75%', plugins: { legend: { display: false } } }}
+                />
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{t('assetBlocks')}</div>
+                  <div className="text-sm font-black text-zinc-900 dark:text-white tracking-tighter">{distribution.length}</div>
                 </div>
               </div>
-
-              <div className="space-y-6">
-              <div className="bg-white/60 dark:bg-zinc-900/60 p-6 rounded-[32px] border border-zinc-200/50 dark:border-white/5 shadow-xl">
-                 <div className="flex items-center gap-3 mb-6">
-                    <Activity className="w-4 h-4 text-emerald-500" />
-                    <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none">Статистика</h4>
-                 </div>
-                 <div className="space-y-4">
-                    <div className="p-4 bg-zinc-50/50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-100 dark:border-white/5">
-                       <div className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">Реалізований прибуток</div>
-                       <div className="text-xl font-black text-zinc-900 dark:text-white">{fmt(portfolio.totalSoldUsd * (bCur === 'USD' ? 1 : bUsdRate), bCur)}</div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-h-[250px] overflow-y-auto no-scrollbar pr-1 pt-2">
+                {distribution.map((d, i) => (
+                  <div key={i} className="flex flex-col p-3 rounded-2xl bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/5 hover:bg-white dark:hover:bg-zinc-800 transition-all group">
+                    <div className="flex items-center gap-2 mb-1.5">
+                       <div className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: d.color }} />
+                       <span className="text-[9px] font-black text-zinc-500 uppercase tracking-tight group-hover:text-zinc-900 dark:group-hover:text-white transition-colors truncate">{d.name}</span>
                     </div>
-                    <div className="p-4 bg-zinc-50/50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-100 dark:border-white/5">
-                       <div className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">Токени отримано (Дохід)</div>
-                       <div className="text-xl font-black text-indigo-500">{portfolio.totalIncomeTokens?.toFixed(2) || '0.00'} ERBB</div>
+                    <div className="flex items-baseline justify-between">
+                       <span className="text-xs font-black text-zinc-900 dark:text-white">
+                         {d.value.toLocaleString()} BB
+                       </span>
+                       <span className="text-[8px] font-bold text-zinc-400 opacity-60 ml-2">
+                          ≈ {formatGlobal(d.value * effectivePrice, globalCurrency, exchangeRates, 'USD')}
+                       </span>
+                       <span className="text-[10px] font-black text-indigo-500">
+                          {portfolio.tokens > 0 ? ((d.value / portfolio.tokens) * 100).toFixed(0) : 0}%
+                       </span>
                     </div>
-                 </div>
-              </div>
-
-              <div className="bg-white/60 dark:bg-zinc-900/60 p-6 rounded-[32px] border border-zinc-200/50 dark:border-white/5 shadow-xl">
-                 <div className="flex items-center gap-3 mb-6">
-                    <PieChart className="w-4 h-4 text-indigo-500" />
-                    <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none">Розподіл</h4>
-                 </div>
-                 <div className="h-[200px] mb-6">
-                    <div className="flex h-full items-center justify-center text-xs text-zinc-400 italic">Дивіться вкладку Розподіл</div>
-                 </div>
+                  </div>
+                ))}
               </div>
             </div>
           </motion.div>
         )}
 
-        {/* Вкладка Розподілу */}
         {activeSubTab === 'distribution' && (
-          <motion.div
-            key="distribution"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="space-y-8 pt-4"
-          >
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-               <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 text-indigo-600">
-                    <PieChart className="w-7 h-7" />
-                  </div>
-                  <div>
-                    <h3 className="text-3xl font-black text-zinc-900 dark:text-white uppercase tracking-tighter">Блоки Активів</h3>
-                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-1">Детальна структура порфеля Bitbon</p>
-                  </div>
-               </div>
-               <button 
-                 onClick={() => setShowAddAssetForm(true)}
-                 className="w-full md:w-auto px-8 py-3.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-2xl text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3"
-               >
-                 <Plus className="w-4 h-4" /> Додати Новий Блок
-               </button>
+          <motion.div key="distribution" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-8 pt-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-3xl font-black text-zinc-900 dark:text-white uppercase tracking-tighter">{t('assetBlocks')}</h3>
+              <div className="flex gap-2">
+                <button 
+                  onClick={async () => {
+                    if (confirm('Ви впевнені, що хочете очистити всі суми та історію? Блоки активів залишаться, але їх баланси стануть 0.')) {
+                      setIsSaving(true);
+                      try {
+                        for (const tx of portfolio.sorted) {
+                          await onDeleteTx(tx.id);
+                        }
+                        for (const a of assets) {
+                          if (onUpdateAsset) {
+                            await onUpdateAsset(a.id, { amount: 0 });
+                          }
+                        }
+                      } finally {
+                        setIsSaving(false);
+                      }
+                    }
+                  }} 
+                  disabled={isSaving} 
+                  className="flex items-center gap-2 px-5 py-3.5 bg-zinc-100 dark:bg-white/5 text-zinc-500 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-zinc-200/50 dark:border-white/5 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20 transition-all font-black"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isSaving ? 'animate-spin' : ''}`} /> 
+                  {isSaving ? 'Очищення...' : 'Скинути баланси'}
+                </button>
+                <button onClick={() => setShowAddAssetForm(true)} className="px-8 py-3.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:bg-zinc-900 rounded-2xl text-xs font-black uppercase tracking-widest">
+                  <Plus className="w-4 h-4 mr-2 inline" /> {t('addAsset')}
+                </button>
+              </div>
             </div>
-
+            
             {showAddAssetForm && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="p-8 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-3xl rounded-[40px] border border-indigo-500/20 shadow-2xl mb-8"
-              >
-                <div className="flex justify-between items-center mb-6">
-                   <h4 className="text-sm font-black uppercase tracking-widest text-indigo-600">Назва нового блоку</h4>
-                   <button onClick={() => setShowAddAssetForm(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors">
-                     <X className="w-5 h-5 text-zinc-400" />
-                   </button>
-                </div>
-                <div className="flex gap-4">
-                  <input 
-                    type="text"
-                    value={newAssetName}
-                    onChange={e => setNewAssetName(e.target.value)}
-                    placeholder="Наприклад: Провайдинг 2 або Холодне Сховище"
-                    className="flex-1 px-6 py-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 border-none outline-none focus:ring-2 ring-indigo-500/20 font-black text-sm"
-                  />
-                  <button 
-                    onClick={handleAddAsset}
-                    className="px-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-lg"
-                  >
-                    Створити
-                  </button>
-                </div>
-              </motion.div>
+              <div className="bg-white/60 dark:bg-zinc-900/60 p-8 rounded-[40px] border border-zinc-200/50 dark:border-white/5 shadow-2xl space-y-4">
+                <input type="text" value={newAssetName} onChange={e => setNewAssetName(e.target.value)} placeholder={t('portfolioName')} className="w-full px-6 py-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 border-none font-black text-sm" />
+                <button onClick={handleAddAsset} className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest">{t('create')}</button>
+              </div>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                 {(distribution || []).map((d, i) => (
-                   <motion.div 
-                     layout
-                     key={i} 
-                     initial={{ opacity: 0, y: 20 }}
-                     animate={{ opacity: 1, y: 0 }}
-                     transition={{ delay: i * 0.05 }}
-                     className="relative overflow-hidden p-8 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-3xl rounded-[40px] border border-zinc-200/50 dark:border-white/5 transition-all hover:shadow-2xl hover:-translate-y-2 group"
-                   >
-                     <div className="absolute -right-6 -top-6 opacity-[0.03] group-hover:opacity-10 transition-opacity pointer-events-none">
-                        <PieChart className="w-32 h-32 rotate-12" />
-                     </div>
-                     
-                     <div className="flex items-center justify-between mb-8 relative z-10">
-                        <div className="flex items-center gap-3">
-                           <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-lg" style={{ backgroundColor: d.color || '#4f46e5' }}>
-                              {d.name.toLowerCase().includes('provid') ? <TrendingUp className="w-6 h-6" /> : 
-                               d.name.toLowerCase().includes('genesis') ? <Calendar className="w-6 h-6" /> : 
-                               d.name.toLowerCase().includes('sale') ? <Target className="w-6 h-6" /> : <Wallet className="w-6 h-6" />}
-                           </div>
-                           <div>
-                              <div className="text-lg font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-tight leading-none mb-1">{d.name}</div>
-                              <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Системний блок</div>
-                           </div>
-                        </div>
-                        
-                        {assets.some(a => a.id === d.id) && (
-                          <button 
-                             onClick={(e) => {
-                               e.stopPropagation();
-                               if (onConfirmDeleteAsset) onConfirmDeleteAsset(d.id!);
-                             }}
-                             className="w-12 h-12 rounded-full flex items-center justify-center text-red-500 bg-white dark:bg-zinc-800 shadow-xl shadow-red-500/10 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all active:scale-90 border border-zinc-100 dark:border-white/5 relative z-20"
-                             title="Видалити блок"
-                          >
-                             <Trash2 className="w-5 h-5" />
-                          </button>
-                        )}
-                     </div>
-
-                     <div className="space-y-6">
-                        <div className="flex items-end justify-between">
-                           <div>
-                              <div className="text-4xl font-black text-zinc-900 dark:text-white tracking-tighter leading-none mb-1">{d.value.toFixed(2)}</div>
-                              <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Доступно ERBB</div>
-                           </div>
-                           <div className="text-right">
-                              <div className="text-lg font-black text-zinc-800 dark:text-zinc-200 tracking-tight">{fmtUsd(d.value * livePrice)}</div>
-                              <div className="text-[9px] font-black text-zinc-400 uppercase tracking-widest leading-none">Ринкова Оцінка</div>
-                           </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                           <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                              <motion.div 
-                                 initial={{ width: 0 }}
-                                 animate={{ width: `${Math.min(100, (d.value / (portfolio.tokens || 1)) * 100)}%` }}
-                                 className="h-full rounded-full"
-                                 style={{ backgroundColor: d.color || '#4f46e5' }}
-                              />
-                           </div>
-                           <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-                              <span className="text-zinc-400">{((d.value / (portfolio.tokens || 1)) * 100).toFixed(1)}% ПОРТФЕЛЯ</span>
-                              <span className="text-indigo-500">ACTIVE</span>
-                           </div>
-                        </div>
-                     </div>
-                   </motion.div>
-                 ))}
+              {calculatedAssets.map(asset => (
+                <div key={asset.id} className="relative bg-white dark:bg-zinc-900 p-8 rounded-[40px] shadow-xl border border-zinc-100 dark:border-white/5 hover:scale-[1.02] transition-all group">
+                  <div className="flex items-center justify-between mb-8">
+                     <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center" style={{ color: asset.color }}><Wallet className="w-7 h-7" /></div>
+                     <button onClick={() => onConfirmDeleteAsset?.(asset.id)} className="w-10 h-10 rounded-full flex items-center justify-center text-red-500/30 hover:text-red-500 transition-opacity opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                  <h4 className="text-xl font-black text-zinc-900 dark:text-white uppercase tracking-tight">{asset.name}</h4>
+                  <div className="flex items-baseline gap-3 mt-1">
+                    <div className="text-3xl font-black text-zinc-900 dark:text-white">{asset.amount.toFixed(2)} <span className="text-xs">ERBB</span></div>
+                    <div className="text-sm font-bold text-indigo-500 opacity-60">
+                      ≈ {formatGlobal(asset.amount * effectivePrice, globalCurrency, exchangeRates, globalCurrency)}
+                    </div>
+                  </div>
                 </div>
+              ))}
+            </div>
           </motion.div>
         )}
 
-        {/* Вкладка Історії */}
         {activeSubTab === 'history' && (
-          <motion.div
-            key="history"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="space-y-6 pt-4"
-          >
-            <div className="bg-white/60 dark:bg-zinc-900/60 p-10 rounded-[48px] border border-zinc-200/50 dark:border-white/5 shadow-2xl relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
-                  <HistoryIcon className="w-32 h-32 rotate-12" />
-               </div>
-               
-               <div className="flex items-center gap-6 mb-12 relative z-10">
-                  <div className="w-16 h-16 rounded-[24px] bg-indigo-600 text-white flex items-center justify-center shadow-xl shadow-indigo-600/20">
-                    <HistoryIcon className="w-8 h-8" />
-                  </div>
-                  <div>
-                    <h3 className="text-3xl font-black text-zinc-900 dark:text-white uppercase tracking-tighter">Історія Операцій</h3>
-                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mt-1">Повний хронологічний аудит вашого портфеля</p>
-                  </div>
-               </div>
-
-               <div className="space-y-4 relative z-10">
-                  <div className="absolute left-[39px] top-10 bottom-10 w-px bg-zinc-200 dark:bg-zinc-800 hidden md:block" />
-                  
-                  {(!portfolio?.sorted || portfolio.sorted.length === 0) ? (
-                    <div className="py-24 text-center">
-                       <HistoryIcon className="w-16 h-16 text-zinc-100 dark:text-zinc-800 mx-auto mb-4" />
-                       <div className="text-zinc-400 italic text-sm font-medium">Транзакцій не знайдено</div>
-                    </div>
-                  ) : (
-                    [...(portfolio?.sorted || [])].reverse().map((tx: any, idx: number) => {
-                      const asset = assets.find(a => a.id === tx.assetId);
-                      const fromAsset = assets.find(a => a.id === tx.fromAssetId);
-                      const toAsset = assets.find(a => a.id === tx.toAssetId);
-                      
-                      const typeStyles = {
-                        buy: { bg: 'bg-indigo-600', icon: Plus, color: 'text-indigo-600', label: 'Покупка' },
-                        sell: { bg: 'bg-zinc-900 dark:bg-white', icon: Minus, color: 'text-zinc-900 dark:text-white', label: 'Продаж' },
-                        income: { bg: 'bg-emerald-500', icon: Coins, color: 'text-emerald-500', label: 'Дохід' },
-                        transfer: { bg: 'bg-blue-600', icon: Activity, color: 'text-blue-600', label: 'Переказ' },
-                      };
-                      const style = typeStyles[tx.type as keyof typeof typeStyles] || typeStyles.buy;
-
-                      return (
-                        <motion.div 
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: idx * 0.02 }}
-                          key={tx.id || idx} 
-                          className="relative flex flex-col md:flex-row items-center gap-6 p-6 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-2xl rounded-[32px] border border-zinc-100/50 dark:border-white/5 hover:border-indigo-500/30 transition-all group"
-                        >
-                          <div className="relative z-10 shrink-0">
-                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white ${style.bg} shadow-xl shadow-current/20 border-4 border-white dark:border-zinc-900`}>
-                              <style.icon className={`w-6 h-6 ${tx.type === 'sell' ? 'text-white dark:text-zinc-900' : 'text-white'}`} />
-                            </div>
-                          </div>
-
-                          <div className="flex-1 min-w-0 pt-2">
-                            <div className="flex flex-wrap items-center gap-3 mb-2">
-                              <span className={`text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 ${style.color} border border-current/10`}>
-                                {style.label}
-                              </span>
-                              <span className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">{tx.date}</span>
-                              {tx.time && <span className="text-[11px] font-black text-zinc-400 uppercase tracking-widest opacity-50">• {tx.time}</span>}
-                            </div>
-                            
-                            <h4 className="text-xl font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-tighter truncate leading-none">
-                              {tx.type === 'transfer' 
-                                ? <span className="flex items-center gap-2">{fromAsset?.name} <ArrowUpRight className="w-4 h-4 opacity-30" /> {toAsset?.name}</span>
-                                : asset?.name || 'Загальна категорія'}
-                            </h4>
-                            
-                            {tx.note && (
-                              <p className="text-xs font-bold text-zinc-400 mt-2 italic truncate opacity-80">
-                                {tx.note}
-                              </p>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-8 w-full md:w-auto mt-6 md:mt-0 pt-6 md:pt-0 border-t md:border-t-0 border-zinc-100 dark:border-white/5">
-                            <div className="text-left md:text-right flex-1 md:flex-none">
-                              <div className={`text-3xl font-black tracking-tighter leading-none mb-1 ${
-                                tx.type === 'buy' || tx.type === 'income' ? 'text-emerald-500' : 
-                                tx.type === 'sell' ? 'text-red-500' : 'text-blue-500'
-                              }`}>
-                                {tx.type === 'buy' || tx.type === 'income' ? '+' : tx.type === 'sell' ? '-' : ''} 
-                                {tx.tokens.toFixed(4)} <span className="text-[12px] uppercase font-black opacity-40">ERBB</span>
-                              </div>
-                              {tx.amountUsd > 0 && (
-                                <div className="text-[11px] font-black text-zinc-400 uppercase tracking-widest opacity-60">
-                                  ≈ {fmtUsd(tx.amountUsd)}
-                                </div>
-                              )}
-                            </div>
-                            
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (onConfirmDeleteTx) onConfirmDeleteTx(tx.id);
-                              }}
-                              className="w-14 h-14 rounded-full flex items-center justify-center text-red-500 bg-white dark:bg-zinc-800 shadow-xl shadow-red-500/10 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all active:scale-90 border border-zinc-100 dark:border-white/5 relative z-20"
-                              title="Видалити транзакцію"
-                            >
-                              <Trash2 className="w-6 h-6" />
-                            </button>
-                          </div>
-                        </motion.div>
-                      );
-                    })
-                  )}
+          <motion.div key="history" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6 pt-4">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 bg-zinc-50 dark:bg-zinc-900/40 rounded-[32px] border border-zinc-200/50 dark:border-white/5">
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full md:w-auto">
+                  {[
+                    { id: 'all', label: 'Всі' },
+                    { id: 'income', label: 'Винагороди' },
+                    { id: 'trade', label: 'Торгівля' },
+                    { id: 'transfer', label: 'Перекази' }
+                  ].map(f => (
+                    <button key={f.id} onClick={() => setHistoryFilter(f.id as any)} className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${historyFilter === f.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'bg-white dark:bg-zinc-800 text-zinc-400 border border-zinc-200/50 dark:border-white/5'}`}>
+                      {f.label}
+                    </button>
+                  ))}
                 </div>
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                   <button 
+                     onClick={() => {
+                        const seen = new Set();
+                        const toDelete: string[] = [];
+                        portfolio.sorted.forEach((tx: any) => {
+                          const key = `${tx.date}-${tx.tokens}-${tx.assetId || ''}-${tx.fromAssetId || ''}-${tx.toAssetId || ''}-${tx.type}`;
+                          if (seen.has(key)) {
+                            toDelete.push(tx.id);
+                          } else {
+                            seen.add(key);
+                          }
+                        });
+                        if (toDelete.length > 0 && confirm(`Видалити ${toDelete.length} дублікатів?`)) {
+                           toDelete.forEach(id => onDeleteTx(id));
+                        }
+                     }}
+                     className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest border border-red-500/20 hover:bg-red-500/20 transition-all whitespace-nowrap"
+                   >
+                     <RefreshCw className="w-3 h-3" /> Очистити дублікати
+                   </button>
+                   <select value={historyAssetFilter} onChange={e => setHistoryAssetFilter(e.target.value)} className="bg-white dark:bg-zinc-800 px-4 py-2 rounded-xl text-[10px) font-black uppercase tracking-widest outline-none border border-zinc-200/50 dark:border-white/5 flex-1 md:flex-none">
+                     <option value="all">Всі блоки</option>
+                     {assets.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                   </select>
+                </div>
+            </div>
+            <div className="space-y-4">
+              {portfolio.sorted
+                .filter((tx: any) => {
+                  if (historyFilter === 'income') return tx.type === 'income';
+                  if (historyFilter === 'trade') return ['buy', 'sell'].includes(tx.type);
+                  if (historyFilter === 'transfer') return tx.type === 'transfer';
+                  return true;
+                })
+                .filter((tx: any) => historyAssetFilter === 'all' || [tx.assetId, tx.fromAssetId, tx.toAssetId].includes(historyAssetFilter))
+                .map((tx: any) => (
+                <div key={tx.id} className="flex items-center gap-4 p-6 bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-100 dark:border-white/5 group hover:border-indigo-500/30 transition-all">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg ${
+                    tx.type === 'income' ? 'bg-emerald-500 shadow-emerald-500/20' : 
+                    tx.type === 'buy' ? 'bg-indigo-600 shadow-indigo-600/20' :
+                    tx.type === 'sell' ? 'bg-rose-500 shadow-rose-500/20' :
+                    'bg-blue-500 shadow-blue-500/20'
+                  }`}>
+                    {tx.type === 'income' ? <Coins className="w-5 h-5" /> : 
+                     tx.type === 'buy' ? <Plus className="w-5 h-5" /> :
+                     tx.type === 'sell' ? <Minus className="w-5 h-5" /> :
+                     <ArrowLeftRight className="w-5 h-5" />}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[10px] font-black text-zinc-400 uppercase mb-1">
+                      {tx.date} • {t(tx.type + 'Action') || tx.type.toUpperCase()}
+                    </div>
+                    <div className="text-lg font-black text-zinc-900 dark:text-white uppercase tracking-tight">
+                      {tx.type === 'transfer' ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-zinc-400">{assets.find(a => a.id === tx.fromAssetId)?.name}</span>
+                          <ArrowLeftRight className="w-3 h-3" />
+                          <span>{assets.find(a => a.id === tx.toAssetId)?.name}</span>
+                        </div>
+                      ) : (
+                        assets.find(a => a.id === tx.assetId)?.name || 'Блокчейн'
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`text-xl font-black ${
+                      ['sell', 'transfer'].includes(tx.type) ? 'text-rose-500' : 'text-emerald-500'
+                    }`}>
+                      {tx.type === 'sell' || (tx.type === 'transfer' && tx.assetId === tx.fromAssetId) ? '-' : '+'}
+                      {tx.tokens.toFixed(4)} <span className="text-xs">ERBB</span>
+                    </div>
+                    <div className="text-[10px] font-black text-zinc-400 opacity-60">≈ {formatGlobal((tx.amountUsd || tx.tokens * effectivePrice), globalCurrency, exchangeRates, 'USD')}</div>
+                  </div>
+                  <button onClick={() => onConfirmDeleteTx?.(tx.id)} className="w-10 h-10 rounded-full flex items-center justify-center text-red-500/30 hover:text-red-500 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
             </div>
           </motion.div>
         )}
 
         {activeSubTab === 'analysis' && (
-          <motion.div
-            key="analysis"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="space-y-8 pt-4"
-          >
-             <div className="bg-white/60 dark:bg-zinc-900/60 p-8 rounded-[32px] border border-zinc-200/50 dark:border-white/5 shadow-xl">
-               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
-                 <div>
-                   <h3 className="text-2xl font-black text-zinc-900 dark:text-white uppercase tracking-tighter">Прогноз росту (20 років)</h3>
-                   <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-1">Комбінований інтерес та стратегія реінвестування</p>
-                 </div>
-                 <div className="flex items-center gap-6 bg-zinc-100 dark:bg-zinc-800/50 p-4 rounded-2xl w-full md:w-auto">
-                   <div className="shrink-0 text-[10px] font-black text-zinc-400 uppercase tracking-widest">Growth %</div>
-                   <input 
-                      type="range" 
-                      min="1" max="50" step="0.5" 
-                      value={annualGrowthRate} 
-                      onChange={e => setAnnualGrowthRate(parseFloat(e.target.value))}
-                      className="accent-indigo-500 flex-1 md:w-32"
-                   />
-                   <div className="w-12 text-center text-sm font-black text-indigo-500">{annualGrowthRate}%</div>
-                 </div>
-               </div>
-
-               <div className="h-[400px]">
-                 <Line 
-                   id="projection-chart"
-                   data={{
-                     labels: Array.from({length: 21}, (_, i) => `${new Date().getFullYear() + i}`),
-                     datasets: [
-                       {
-                         label: 'Оптимістичний прогноз',
-                         data: Array.from({length: 21}, (_, i) => (portfolio.tokens || 0) * livePrice * Math.pow(1 + annualGrowthRate / 100, i)),
-                         borderColor: '#4f46e5',
-                         backgroundColor: 'rgba(79,70,229,0.1)',
-                         fill: true,
-                         tension: 0.4,
-                         pointRadius: 4,
-                         pointHoverRadius: 6,
-                         borderWidth: 4
-                       }
-                     ]
-                   }}
-                   options={{
-                     ...commonChartOptions,
-                     maintainAspectRatio: false,
-                     scales: {
-                       y: {
-                         ticks: {
-                           callback: (val: any) => fmt(val, bCur)
-                         }
-                       }
-                     }
-                   }}
-                 />
-               </div>
-
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
-                  <div className="p-6 bg-zinc-50/50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-200 dark:border-white/5">
-                    <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Через 5 років</div>
-                    <div className="text-2xl font-black text-zinc-900 dark:text-white">
-                      {fmt((portfolio.tokens || 0) * livePrice * Math.pow(1 + annualGrowthRate/100, 5), bCur)}
-                    </div>
+          <motion.div key="analysis" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-8 pt-4">
+             <div className="bg-white/60 dark:bg-zinc-900/60 p-8 rounded-[40px] shadow-2xl border border-zinc-200/50 dark:border-white/5 backdrop-blur-xl">
+                <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-10">
+                   <div>
+                     <h3 className="text-3xl font-black text-zinc-900 dark:text-white uppercase tracking-tighter mb-2">{t('projection20y')}</h3>
+                     <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest opacity-60">Моделювання капіталу при цільовій ціні</p>
+                   </div>
+                   <div className="flex gap-4">
+                     <div className="flex flex-col gap-1 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-3xl border border-zinc-200/50 dark:border-white/5">
+                       <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-1 text-center">Цільова ціна $ (через 20р)</span>
+                       <input type="number" value={targetPrice20y} onChange={e => setTargetPrice20y(parseFloat(e.target.value))} className="w-32 bg-transparent text-center font-black text-xl outline-none text-indigo-500" />
+                     </div>
+                   </div>
+                </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                  <div className="lg:col-span-3 h-[400px]">
+                    <Line 
+                      data={(() => {
+                        const labels = Array.from({length: 21}, (_, i) => `${new Date().getFullYear() + i}`);
+                        const points: number[] = [];
+                        let curTokens = portfolio.tokens || 0;
+                        let curPrice = effectivePrice;
+                        const ratio = targetPrice20y / curPrice;
+                        const yMult = Math.pow(ratio, 1/20);
+                        for (let y = 0; y <= 20; y++) {
+                          points.push(curTokens * curPrice * Math.pow(yMult, y));
+                        }
+                        return {
+                          labels,
+                          datasets: [{ 
+                            label: t('capitalProjection') || 'Прогноз капіталу', 
+                            data: points, 
+                            borderColor: '#4f46e5', 
+                            tension: 0.4, 
+                            fill: true, 
+                            borderWidth: 4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#4f46e5',
+                            pointBorderColor: '#fff',
+                            backgroundColor: (context: any) => {
+                              const chart = context.chart;
+                              const {ctx, chartArea} = chart;
+                              if (!chartArea) return 'rgba(79, 70, 229, 0.05)';
+                              const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                              gradient.addColorStop(0, 'rgba(79,70,229,0.2)');
+                              gradient.addColorStop(1, 'rgba(79,70,229,0)');
+                              return gradient;
+                            }
+                          }]
+                        };
+                      })()}
+                      options={{ 
+                        ...commonChartOptions, 
+                        maintainAspectRatio: false,
+                        scales: {
+                          ...commonChartOptions.scales,
+                          y: {
+                            ...commonChartOptions.scales?.y,
+                            ticks: {
+                               callback: (v) => formatGlobal(v as number, globalCurrency, exchangeRates || {}, 'USD').replace('.00', ''),
+                              font: { weight: 'bold' }
+                            }
+                          }
+                        }
+                      } as any}
+                    />
                   </div>
-                  <div className="p-6 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
-                    <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Через 10 років</div>
-                    <div className="text-2xl font-black text-indigo-500">
-                      {fmt((portfolio.tokens || 0) * livePrice * Math.pow(1 + annualGrowthRate/100, 10), bCur)}
-                    </div>
+                  
+                  <div className="space-y-4">
+                    <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-4">Орієнтири (Milestones)</div>
+                    {[50000, 100000, 250000, 500000, 1000000].map(goal => {
+                      const curTokens = portfolio.tokens || 0;
+                      const curPrice = effectivePrice;
+                      const ratio = targetPrice20y / curPrice;
+                      const yMult = Math.pow(ratio, 1/20);
+                      
+                      let yearReached = null;
+                      for (let y = 0; y <= 20; y++) {
+                        if (curTokens * curPrice * Math.pow(yMult, y) >= goal) {
+                          yearReached = new Date().getFullYear() + y;
+                          break;
+                        }
+                      }
+                      
+                      return (
+                        <div key={goal} className={`p-4 rounded-2xl border ${yearReached ? 'bg-indigo-500/5 border-indigo-500/20' : 'bg-zinc-100/50 dark:bg-zinc-800/50 border-zinc-200 dark:border-white/5 opacity-40'}`}>
+                          <div className="text-[8px] font-black text-zinc-400 uppercase mb-1">Ціль {formatGlobal(goal, globalCurrency, exchangeRates || {}, 'USD').replace('.00', '')}</div>
+                          <div className="text-sm font-black text-zinc-900 dark:text-white">{yearReached ? `Рік достиження: ${yearReached}` : 'Потрібно більше часу або вища ціна'}</div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div className="p-6 bg-zinc-900 text-white rounded-2xl border border-white/5 shadow-2xl">
-                    <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Через 20 років</div>
-                    <div className="text-2xl font-black text-white">
-                      {fmt((portfolio.tokens || 0) * livePrice * Math.pow(1 + annualGrowthRate/100, 20), bCur)}
-                    </div>
-                  </div>
-               </div>
+                </div>
              </div>
           </motion.div>
         )}
 
+        {activeSubTab === 'reports' && (
+          <motion.div key="reports" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+             <MonthlyReportView 
+            assets={assets}
+            transactions={portfolio.transactions}
+            bCur={bCur}
+            usdRate={bUsdRate}
+            language={language}
+            t={t}
+            formatGlobal={formatGlobal}
+            globalCurrency={globalCurrency}
+            exchangeRates={exchangeRates || {}}
+          />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showTxForm && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowTxForm(null)} className="absolute inset-0 bg-zinc-950/80 backdrop-blur-md" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-lg bg-white dark:bg-zinc-800 p-8 rounded-[40px] shadow-2xl">
+               <div className="flex justify-between items-center mb-6">
+                 <h4 className="text-sm font-black uppercase tracking-widest">
+                   {showTxForm === 'buy' ? 'Купити' : 
+                    showTxForm === 'sell' ? 'Продати' : 
+                    showTxForm === 'transfer' ? 'Переказ' : 'Винагорода'}
+                 </h4>
+                 <button onClick={() => setShowTxForm(null)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-xl transition-colors"><X className="w-5 h-5 text-zinc-400" /></button>
+               </div>
+               <div className="space-y-4">
+                  {showTxForm === 'transfer' ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-zinc-400 uppercase ml-2">Звідки</label>
+                          <select value={txFromAssetId} onChange={e => setTxFromAssetId(e.target.value)} className="w-full bg-zinc-100 dark:bg-zinc-900 px-6 py-4 rounded-2xl font-black text-sm outline-none">
+                            <option value="">Оберіть блок...</option>
+                            {assets.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px) font-black text-zinc-400 uppercase ml-2">Куди</label>
+                          <select value={txToAssetId} onChange={e => setTxToAssetId(e.target.value)} className="w-full bg-zinc-100 dark:bg-zinc-900 px-6 py-4 rounded-2xl font-black text-sm outline-none">
+                            <option value="">Оберіть блок...</option>
+                            {assets.map(a => <option key={a.id} value={a.id} disabled={a.id === txFromAssetId}>{a.name}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <select value={txAssetId} onChange={e => setTxAssetId(e.target.value)} className="w-full bg-zinc-100 dark:bg-zinc-900 px-6 py-4 rounded-2xl font-black text-sm outline-none">
+                      <option value="">Оберіть блок...</option>
+                      {assets.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                    </select>
+                  )}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-zinc-400 uppercase ml-2">Дата</label>
+                      <input type="date" value={txDate} onChange={e => setTxDate(e.target.value)} className="w-full bg-zinc-100 dark:bg-zinc-900 px-6 py-4 rounded-2xl font-black text-sm outline-none" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-zinc-400 uppercase ml-2">Кількість ERBB</label>
+                      <LocalNumberInput value={txTokens} onChange={handleTokensChange} className="w-full bg-zinc-100 dark:bg-zinc-900 px-6 py-4 rounded-2xl font-black text-sm outline-none" />
+                    </div>
+                  </div>
+
+                  {(showTxForm === 'buy' || showTxForm === 'sell') && (
+                    <div className="grid grid-cols-2 gap-4 p-4 bg-zinc-50 dark:bg-zinc-900/40 rounded-[28px] border border-zinc-200/50 dark:border-white/5">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black text-zinc-400 uppercase ml-2">Ціна $ (за 1 ERBB)</label>
+                        <LocalNumberInput 
+                          value={txPrice} 
+                          onChange={(v) => {
+                            setTxPrice(v);
+                            syncTokensToAmount(txTokens, v, bUsdRate);
+                          }} 
+                          className="w-full bg-transparent px-2 py-1 font-black text-sm outline-none text-indigo-500" 
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black text-zinc-400 uppercase ml-2">Курс $ (UAH/$)</label>
+                        <LocalNumberInput 
+                          value={txUsdRate} 
+                          onChange={(v) => {
+                            setTxUsdRate(v);
+                            syncTokensToAmount(txTokens, txPrice, v);
+                          }} 
+                          className="w-full bg-transparent px-2 py-1 font-black text-sm outline-none text-indigo-500" 
+                        />
+                      <div className="text-[8px] font-bold text-zinc-400 uppercase ml-2 opacity-50">Можна редагувати вручну</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {(showTxForm === 'buy' || showTxForm === 'sell') && (
+                    <div className="flex items-center justify-between px-6 py-4 bg-indigo-600/5 rounded-2xl border border-indigo-500/10">
+                      <span className="text-[10px] font-black text-indigo-600/60 uppercase">Разом до сплати:</span>
+                      <span className="text-lg font-black text-indigo-600">
+                        {formatGlobal(txAmount, globalCurrency, exchangeRates || {}, bCur)}
+                        {bCur !== 'USD' && (
+                          <span className="text-[10px] ml-2 opacity-50">
+                            (≈ {formatGlobal(txAmount / bUsdRate, globalCurrency, exchangeRates || {}, 'USD')})
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Investment Potential Info */}
+                  {(showTxForm === 'buy' || showTxForm === 'sell') && (
+                    <div className="p-4 bg-indigo-500/5 rounded-[28px] border border-indigo-500/10 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center">
+                          <Activity className="w-5 h-5 text-indigo-500" />
+                        </div>
+                        <div>
+                          <div className="text-[8px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1">Інвестиційний потенціал</div>
+                          <div className="text-sm font-black text-zinc-900 dark:text-white">{formatGlobal(availableBalanceUah || 0, globalCurrency, exchangeRates || {}, 'UAH')}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[8px] font-black text-emerald-500 uppercase tracking-widest leading-none mb-1">Доступно</div>
+                        <div className="text-[10px] font-black text-emerald-600">{(availableBalanceUah || 0) >= txAmount ? 'Достатньо' : 'Недостатньо'}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Budget Account Selection for Unified Transactions */}
+                  {(showTxForm === 'buy' || showTxForm === 'sell' || showTxForm === 'income') && (
+                    <div className="space-y-1 p-4 bg-blue-500/5 rounded-[28px] border border-blue-500/10 relative">
+                      <label className="text-[10px] font-black text-zinc-400 uppercase ml-2 flex items-center gap-2">
+                        <Wallet className="w-3 h-3 text-blue-500" />
+                        {showTxForm === 'buy' ? 'Списати з рахунку (Додатково)' : 'Зарахувати на рахунок'}
+                      </label>
+                      <select 
+                        value={txBudgetAccountId} 
+                        onChange={e => setTxBudgetAccountId(e.target.value)} 
+                        className="w-full bg-transparent px-2 py-1 font-black text-sm outline-none text-blue-600 dark:text-blue-400 appearance-none cursor-pointer"
+                      >
+                        <option value="">-- {showTxForm === 'buy' ? 'Тільки з потенціалу' : 'На обраний рахунок'} --</option>
+                        {accounts.map(acc => (
+                          <option key={acc.id} value={acc.id}>
+                            {acc.name} ({formatGlobal(acc.balance, globalCurrency, exchangeRates || {}, 'UAH')})
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-[8px] font-bold text-zinc-400 uppercase ml-2 opacity-50 italic">
+                        {showTxForm === 'buy' 
+                          ? 'Якщо обрано, кошти спишуться і з потенціалу, і з рахунку (для синхронізації)' 
+                          : 'Створить запис в історії бюджету'}
+                      </p>
+                    </div>
+                  )}
+
+                  {txError && <div className="p-4 bg-red-500/10 text-red-500 text-[10px] font-black rounded-xl">{txError}</div>}
+                  <button onClick={handleSaveTx} disabled={isSaving} className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest">{isSaving ? 'Зберігаємо...' : 'Зберегти'}</button>
+               </div>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
     </div>
   );

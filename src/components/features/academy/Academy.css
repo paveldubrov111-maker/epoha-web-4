@@ -1,0 +1,74 @@
+/* 🎓 Bitbon Academy Premium Styles */
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.preserves-3d {
+  transform-style: preserve-3d;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Glassmorphism & Gloom */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.text-glow-blue {
+  text-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+}
+
+/* Animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Lesson Content - Scoped to LessonRenderer */
+.prose .th2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: white;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.02em;
+}
+
+.prose .th3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #3b82f6;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose strong {
+  color: white;
+  font-weight: 700;
+}
+
+/* Responsiveness tweaks */
+@media (max-width: 640px) {
+  .hdr-title {
+    font-size: 1.75rem;
+  }
+}

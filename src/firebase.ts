@@ -51,9 +51,10 @@ export enum OperationType {
   WRITE = 'write',
 }
 
-export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  console.error('Firestore/Supabase Error: ', String(error), operationType, path);
-  alert(`Помилка бази даних (${operationType}): ${String(error)}. Перевірте консоль для деталей.`);
+export function handleFirestoreError(error: any, operationType: OperationType, path: string | null) {
+  const message = error?.message || String(error);
+  console.error('Firestore/Supabase Error: ', message, operationType, path);
+  alert(`Помилка бази даних (${operationType}): ${message}. Перевірте консоль для деталей.`);
 }
 
 // Convert camelCase object keys to snake_case for Supabase columns (SHALLOW)
@@ -62,7 +63,6 @@ function toSnakeCase(obj: any): any {
   const result: any = {};
   for (const key of Object.keys(obj)) {
     if (obj[key] === undefined) continue;
-    if (key === 'mcc') continue; // hard-block legacy field that is absent in some budget_txs schemas
     const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
     result[snakeKey] = obj[key];
   }
@@ -70,7 +70,7 @@ function toSnakeCase(obj: any): any {
 }
 
 // Convert snake_case Supabase columns back to camelCase object keys (SHALLOW)
-function toCamelCase(obj: any): any {
+export function toCamelCase(obj: any): any {
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return obj;
   const result: any = {};
   for (const key of Object.keys(obj)) {
@@ -90,34 +90,50 @@ export function doc(db: any, path: string, id?: string) {
 
 function parsePath(fullPath: string) {
   const parts = fullPath.split('/').filter(Boolean);
+  
+  // Pattern 1: users/USER_ID (Profile)
   if (parts.length === 2 && parts[0] === 'users') {
     return { table: 'profiles', userId: parts[1], id: parts[1] };
   }
   
-  const userId = parts[1];
-  let table = parts[2];
-  const tableMap: Record<string, string> = {
-    accounts: 'accounts',
-    categories: 'categories',
-    budgetTxs: 'budget_txs',
-    investmentTxs: 'investment_txs',
-    portfolios: 'portfolios',
-    portfolioAssets: 'portfolio_assets',
-    assets: 'assets',
-    bbAllocations: 'bb_allocations',
-    monthlyPlans: 'monthly_plans',
-    bankConnections: 'bank_connections',
-    goals: 'goals',
-    cushion: 'cushion',
-    debts: 'debts',
-    portfolioTransactions: 'portfolio_transactions'
-  };
-  table = tableMap[table] || table;
-  let id = null;
-  if (parts.length > 3) {
-      id = parts.slice(3).join('/');
+  // Pattern 2: users/USER_ID/collection/DOC_ID
+  if (parts.length >= 3 && parts[0] === 'users') {
+    const userId = parts[1];
+    const rawTable = parts[2];
+    const tableMap: Record<string, string> = {
+      accounts: 'accounts',
+      categories: 'categories',
+      budgetTxs: 'budget_txs',
+      investmentTxs: 'investment_txs',
+      portfolios: 'portfolios',
+      portfolioAssets: 'portfolio_assets',
+      assets: 'assets',
+      bbAllocations: 'bb_allocations',
+      monthlyPlans: 'monthly_plans',
+      bankConnections: 'bank_connections',
+      goals: 'goals',
+      cushion: 'cushion',
+      cushionAssets: 'cushion_assets',
+      debts: 'debts',
+      portfolioTransactions: 'portfolio_transactions',
+      academyProgress: 'academy_progress',
+      academyContent: 'academy_content'
+    };
+    const table = tableMap[rawTable] || rawTable;
+    const id = parts.length > 3 ? parts.slice(3).join('/') : null;
+    return { table, userId, id };
   }
-  
+
+  // Pattern 3: Global Collection (e.g. academyContent/main)
+  const rawTable = parts[0];
+  const tableMap: Record<string, string> = {
+    academyProgress: 'academy_progress',
+    academyContent: 'academy_content'
+  };
+  const table = tableMap[rawTable] || rawTable;
+  const id = parts.length > 1 ? parts.slice(1).join('/') : null;
+  const userId = null;
+
   return { table, userId, id };
 }
 
@@ -172,14 +188,32 @@ export function onSnapshot(ref: { path: string }, callback: (snapshot: any) => v
 export async function setDoc(ref: { path: string }, data: any, options?: { merge?: boolean }) {
   const { table, userId, id } = parsePath(ref.path);
   const snakeData = toSnakeCase(data);
-  const payload = sanitizeTablePayload(table, { ...snakeData });
+  const payload = { ...snakeData };
   if (table !== 'profiles') {
     payload.user_id = userId;
   }
   
+  if (table === 'portfolio_transactions') {
+    delete payload.from_asset_id;
+    delete payload.to_asset_id;
+  }
+  
   if (id) {
     const idField = table === 'profiles' ? 'id' : 'id';
-    payload.id = table === 'profiles' ? userId : id;
+    payload[idField] = table === 'profiles' ? userId : id;
+
+    // IF MERGE IS TRUE AND RECORD EXISTS, USE .UPDATE()
+    // This prevents SQL null-constraint errors for missing columns (e.g. "type")
+    if (options?.merge) {
+      const { error: updateError } = await supabase.from(table).update(payload).eq(idField, payload[idField]);
+      if (!updateError) return; // Success
+      
+      // If error is "record not found", fallback to upsert
+      if (updateError.code !== 'PGRST116') {
+         console.error(`Error updating doc in ${table}`, updateError);
+         throw updateError;
+      }
+    }
 
     const { error: upsertError } = await supabase.from(table).upsert(payload);
     if (upsertError) {
@@ -187,7 +221,11 @@ export async function setDoc(ref: { path: string }, data: any, options?: { merge
       throw upsertError;
     }
   } else {
-    const { error } = await supabase.from(table).upsert(payload);
+    if (!table) {
+    console.error(`Invalid table resolved for path: ${ref.path}`);
+    return;
+  }
+  const { error } = await supabase.from(table).upsert(payload);
     if (error) {
       console.error(`Error setting doc in ${table}`, error);
       throw error;
@@ -233,9 +271,14 @@ export function writeBatch(db: any) {
       const idField = table === 'profiles' ? 'id' : 'id';
       if (!setsByTable[table]) setsByTable[table] = [];
       
-      const payload: any = sanitizeTablePayload(table, { [idField]: id, ...toSnakeCase(data) });
+      const payload: any = { [idField]: id, ...toSnakeCase(data) };
       if (table !== 'profiles' && userId) {
         payload.user_id = userId;
+      }
+      
+      if (table === 'portfolio_transactions') {
+        delete payload.from_asset_id;
+        delete payload.to_asset_id;
       }
       
       const existingIdx = setsByTable[table].findIndex(item => item[idField] === id);
@@ -255,48 +298,8 @@ export function writeBatch(db: any) {
       for (const table of Object.keys(setsByTable)) {
         const payload = setsByTable[table];
         if (payload.length > 0) {
-          if (table === 'budget_txs') {
-            // Force row-by-row writes for budget_txs to avoid PostgREST column-union/schema-cache issues.
-            for (const row of payload) {
-              const single = sanitizeTablePayload(table, row);
-              const { error } = await supabase.from(table).upsert(single);
-              if (error) {
-                console.error(`[writeBatch] Error in row upsert for ${table}:`, error, single);
-                throw error;
-              }
-            }
-            continue;
-          }
-          const payloadToSend = table === 'budget_txs'
-            ? payload.map((row: any) => {
-                const { mcc, ...rest } = row || {};
-                return rest;
-              })
-            : payload;
           console.log(`[writeBatch] Upserting ${payload.length} records to ${table}`);
-          let { error } = await supabase.from(table).upsert(payloadToSend);
-          if (error && table === 'budget_txs' && String(error?.message || '').includes("Could not find the 'mcc' column")) {
-            // Safety net: some runtime bundles/legacy objects may still contain mcc.
-            // Retry once with mcc stripped at commit time.
-            const sanitizedPayload = payload.map((row: any) => {
-              const { mcc, ...rest } = row || {};
-              return rest;
-            });
-            ({ error } = await supabase.from(table).upsert(sanitizedPayload));
-            if (error) {
-              // Final fallback: row-by-row upsert avoids request-level column union issues.
-              for (const row of sanitizedPayload) {
-                const single = sanitizeTablePayload(table, row);
-                const { error: rowError } = await supabase.from(table).upsert(single);
-                if (rowError) {
-                  error = rowError;
-                  break;
-                } else {
-                  error = null as any;
-                }
-              }
-            }
-          }
+          const { error } = await supabase.from(table).upsert(payload);
           if (error) {
             console.error(`[writeBatch] Error in batch upsert for ${table}:`, error);
             throw error;
@@ -308,28 +311,4 @@ export function writeBatch(db: any) {
       }
     }
   };
-}
-
-/**
- * Supabase schema can temporarily lag behind frontend payload evolution.
- * Keep writes resilient by stripping known non-schema fields per table.
- */
-function sanitizeTablePayload(table: string, payload: any) {
-  if (!payload || typeof payload !== 'object') return payload;
-
-  if (table === 'budget_txs') {
-    // Strict allow-list to avoid PostgREST schema-cache mismatches (e.g. missing `mcc`).
-    const allowed = new Set([
-      'id', 'user_id', 'type', 'date', 'time', 'amount', 'currency',
-      'account_id', 'to_account_id', 'category_id', 'note', 'description',
-      'account_name', 'bank_tx_id', 'is_ai_categorized', 'is_incoming'
-    ]);
-    const clean: any = {};
-    for (const [k, v] of Object.entries(payload)) {
-      if (allowed.has(k)) clean[k] = v;
-    }
-    return clean;
-  }
-
-  return payload;
 }

@@ -4,28 +4,15 @@
 
 vite v6.4.1 building for production...
 transforming...
-✓ 23 modules transformed.
-✗ Build failed in 1.55s
-error during build:
-[vite:esbuild] Transform failed with 1 error:
-/Users/paveldybrov/Downloads/epoha-web-4/src/components/IOAssistant.tsx:467:274: ERROR: Unterminated string literal
-file: /Users/paveldybrov/Downloads/epoha-web-4/src/components/IOAssistant.tsx:467:274
+✓ 2163 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.42 kB │ gzip:   0.29 kB
+dist/assets/index-Bjin-4M3.css    160.67 kB │ gzip:  22.16 kB
+dist/assets/index-Bz2xKNt1.js   1,401.11 kB │ gzip: 387.26 kB
 
-Unterminated string literal
-467|        return `Ваш капітал може генерувати ${fmt(monthlyIncome)} пасивного доходу на місяць. ${monthlyIncome > monthlyExpensesUsd ? 'Це повністю п  const getGeminiResponse = async (query: string): Promise<string> => {
-468|      // Vite will replace this string at build time
-469|      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-   |        ^
-470|      if (!apiKey) {
-471|        console.warn("V3: API Key missing, using local logic fallback");
-
-    at failureErrorWithLog (/Users/paveldybrov/Downloads/epoha-web-4/node_modules/vite/node_modules/esbuild/lib/main.js:1467:15)
-    at /Users/paveldybrov/Downloads/epoha-web-4/node_modules/vite/node_modules/esbuild/lib/main.js:736:50
-    at responseCallbacks.<computed> (/Users/paveldybrov/Downloads/epoha-web-4/node_modules/vite/node_modules/esbuild/lib/main.js:603:9)
-    at handleIncomingPacket (/Users/paveldybrov/Downloads/epoha-web-4/node_modules/vite/node_modules/esbuild/lib/main.js:658:12)
-    at Socket.readFromStdout (/Users/paveldybrov/Downloads/epoha-web-4/node_modules/vite/node_modules/esbuild/lib/main.js:581:7)
-    at Socket.emit (node:events:508:28)
-    at addChunk (node:internal/streams/readable:563:12)
-    at readableAddChunkPushByteMode (node:internal/streams/readable:514:3)
-    at Readable.push (node:internal/streams/readable:394:5)
-    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 6.65s

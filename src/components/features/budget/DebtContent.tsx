@@ -1,4 +1,4 @@
-import { CreditCard, Plus, ArrowRight, ArrowUpRight, History, Edit2, Trash2, Sparkles, Landmark, X, Filter } from 'lucide-react';
+import { CreditCard, Plus, ArrowRight, ArrowUpRight, History, Edit2, Trash2, Check, Sparkles, Landmark, X, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import React from 'react';
 import { Account, BudgetCategory, BudgetTx, MonthlyPlan, Debt } from '../../../types';
@@ -65,6 +65,7 @@ export const DebtContent = ({
   debtName, debtAmount, debtRate, debtPayment, debtColor, editingDebt, 
   handleUpdateTxCategory, isCompact = false
 }: DebtContentProps) => {
+  const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(null);
   return (
     <div className={`space-y-8 ${isCompact ? 'px-1' : ''}`}>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-zinc-100 dark:border-zinc-800">
@@ -218,19 +219,64 @@ export const DebtContent = ({
                         <h4 className="text-lg font-black text-zinc-900 dark:text-white tracking-tight">{debt.name}</h4>
                         <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{debt.startDate}</div>
                       </div>
-                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-2">
                          <button 
                            onClick={() => { setEditingDebt(debt); setDebtName(debt.name); setDebtAmount(debt.amount); setDebtRate(debt.interestRate); setDebtPayment(debt.monthlyPayment); setDebtColor(debt.color); setShowDebtForm(true); }}
                            className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-blue-500 transition-colors"
                          >
                            <Edit2 className="w-3.5 h-3.5" />
                          </button>
-                         <button 
-                           onClick={() => handleDeleteDebt(debt.id)}
-                           className="p-2 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all"
-                         >
-                           <Trash2 className="w-3.5 h-3.5" />
-                         </button>
+                         
+                         <div className="flex items-center gap-1">
+                           <AnimatePresence mode="wait">
+                             {confirmDeleteId === debt.id ? (
+                               <motion.div 
+                                 key="confirm"
+                                 initial={{ opacity: 0, scale: 0.5 }}
+                                 animate={{ opacity: 1, scale: 1 }}
+                                 exit={{ opacity: 0, scale: 0.5 }}
+                                 className="flex items-center gap-1"
+                               >
+                                 <button 
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     setConfirmDeleteId(null);
+                                   }}
+                                   className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-all"
+                                   title="Скасувати"
+                                 >
+                                   <X className="w-3.5 h-3.5" />
+                                 </button>
+                                 <button 
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     handleDeleteDebt(debt.id);
+                                     setConfirmDeleteId(null);
+                                   }}
+                                   className="p-2 rounded-lg bg-rose-500 text-white transition-all shadow-lg shadow-rose-500/20"
+                                   title="Підтвердити видалення"
+                                 >
+                                   <Check className="w-3.5 h-3.5" />
+                                 </button>
+                               </motion.div>
+                             ) : (
+                               <motion.button 
+                                 key="trash"
+                                 initial={{ opacity: 0, scale: 0.5 }}
+                                 animate={{ opacity: 1, scale: 1 }}
+                                 exit={{ opacity: 0, scale: 0.5 }}
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   setConfirmDeleteId(debt.id);
+                                 }}
+                                 className="p-2 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all opacity-40 group-hover:opacity-100"
+                                 title="Видалити"
+                                >
+                                 <Trash2 className="w-3.5 h-3.5" />
+                               </motion.button>
+                             )}
+                           </AnimatePresence>
+                         </div>
                       </div>
                     </div>
                     
@@ -302,7 +348,7 @@ export const DebtContent = ({
               initial={{ opacity: 0, scale: 0.9, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 30 }}
-              className="relative w-full max-w-lg bg-white dark:bg-zinc-950 rounded-[48px] shadow-2xl border border-white/20 dark:border-zinc-800 overflow-hidden"
+              className="relative w-full max-w-lg bg-white dark:bg-zinc-950 rounded-[48px] shadow-2xl border border-white/20 dark:border-zinc-800"
             >
               <div className="p-10 space-y-8">
                 <div className="flex justify-between items-center">

@@ -5,13 +5,15 @@ interface LocalNumberInputProps {
   onChange: (v: number) => void;
   className?: string;
   step?: string;
+  disabled?: boolean;
 }
 
 const LocalNumberInput: React.FC<LocalNumberInputProps> = ({
   value,
   onChange,
   className,
-  step = "any"
+  step = "any",
+  disabled = false
 }) => {
   const [localValue, setLocalValue] = useState(value.toString());
 
@@ -25,6 +27,7 @@ const LocalNumberInput: React.FC<LocalNumberInputProps> = ({
     <input
       type="number"
       step={step}
+      disabled={disabled}
       value={localValue}
       onChange={(e) => {
         setLocalValue(e.target.value);

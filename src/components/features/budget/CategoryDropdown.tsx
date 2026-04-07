@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, Plus, X, Check, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { BudgetCategory, MonthlyPlan } from '../../../types';
@@ -35,6 +36,12 @@ export function CategoryDropdown({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [openUp, setOpenUp] = useState(false);
   const [openRight, setOpenRight] = useState(true);
+  const [activeTab, setActiveTab] = useState<'plan' | 'accounts' | 'goals' | 'recent'>('plan');
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0, right: 0, bottom: 0 });
+  const [recentIds, setRecentIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem(`recent_cats_${type}`);
+    return saved ? JSON.parse(saved) : [];
+  });
 
   const currentPlan = (monthlyPlans || []).find(mp => mp.id === month);
   const plannedIds = currentPlan?.plans ? Object.keys(currentPlan.plans) : [];
@@ -44,16 +51,19 @@ export function CategoryDropdown({
     .filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
 
   const plannedCategories = filteredCategories.filter(c => plannedIds.includes(c.id));
-  const otherCategories = filteredCategories.filter(c => !plannedIds.includes(c.id));
-  const quickCategories = [...plannedCategories, ...otherCategories]
-    .filter((category, index, self) => self.findIndex(item => item.id === category.id) === index)
-    .slice(0, 8);
+  const goalCategories = filteredCategories.filter(c => c.type === 'goal');
+  const otherCategories = filteredCategories.filter(c => !plannedIds.includes(c.id) && c.type !== 'goal');
+  const recentCategories = categories.filter(c => recentIds.includes(c.id) && c.type === type);
 
   const currentCat = categories.find(c => c.id === currentCategoryId);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        // Only close if it's not a click inside the portal
+        const portalMenu = document.getElementById('category-dropdown-portal');
+        if (portalMenu && portalMenu.contains(event.target as Node)) return;
+        
         setIsOpen(false);
         setIsAdding(false);
       }
@@ -62,186 +72,302 @@ export function CategoryDropdown({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (isOpen && dropdownRef.current) {
+  const updateCoords = () => {
+    if (dropdownRef.current) {
       const rect = dropdownRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
       const spaceRight = window.innerWidth - rect.left;
       
-      // If less than 400px below and more space above, open up
       setOpenUp(spaceBelow < 400 && spaceAbove > spaceBelow);
-      
-      // If less than 300px to the right, align right-0 instead of left-0
       setOpenRight(spaceRight > 300);
+      setCoords({
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        right: rect.right,
+        bottom: rect.bottom
+      });
     }
-  }, [isOpen]);
+  };
+
+  const handleSelect = (id: string) => {
+    if (id) {
+      setRecentIds(prev => {
+        const next = [id, ...prev.filter(i => i !== id)].slice(0, 5);
+        localStorage.setItem(`recent_cats_${type}`, JSON.stringify(next));
+        return next;
+      });
+    }
+    onSelect(id);
+    setIsOpen(false);
+  };
 
   return (
-    <div className={`relative inline-block ${className}`} style={{ zIndex: isOpen ? 1000 : 1 }} ref={dropdownRef}>
+    <div className={`relative inline-block ${className}`} style={{ zIndex: isOpen ? 'var(--z-dropdown)' : 50 }} ref={dropdownRef}>
       <button
         onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl transition-all text-[10px] font-black uppercase tracking-tight max-w-[140px] md:max-w-[180px] shadow-sm ${
+        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-[10px] font-black uppercase tracking-tight min-w-[120px] max-w-[200px] shadow-sm border ${
           currentCat 
-            ? `${currentCat.color} text-white ring-1 ring-white/20 hover:scale-[1.02] active:scale-[0.98]` 
-            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+            ? `${currentCat.color} text-white border-white/20 hover:brightness-110 active:scale-[0.98]` 
+            : 'bg-zinc-100 dark:bg-zinc-900/50 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-white/5 hover:bg-zinc-200 dark:hover:bg-white/10'
         }`}
       >
-        <div className="flex items-center gap-1.5 flex-1 truncate text-left">
-          {currentCat && <div className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />}
+        <div className="flex items-center gap-2 flex-1 truncate text-left">
+          {currentCat ? (
+            <div className="w-1.5 h-1.5 rounded-full bg-white shrink-0 shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
+          ) : (
+            <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-600 shrink-0" />
+          )}
           <span className="truncate">{currentCat ? currentCat.name : placeholder}</span>
         </div>
-        <ChevronDown className={`w-3 h-3 shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180 text-white' : ''}`} />
+        <ChevronDown className={`w-3 h-3 shrink-0 transition-transform duration-500 ${isOpen ? 'rotate-180 opacity-100' : 'opacity-40'}`} />
       </button>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: openUp ? 10 : -10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: openUp ? 10 : -10 }}
-            onClick={(e) => e.stopPropagation()}
-            className={`absolute ${openRight ? 'left-0' : 'right-0'} ${openUp ? 'bottom-full mb-2' : 'top-full mt-2'} w-64 md:w-80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-[24px] border border-zinc-200 dark:border-zinc-800 shadow-2xl z-[1000] overflow-hidden`}
-          >
-            {!isAdding ? (
-              <div className="p-2">
-                <div className="px-2 pb-2 pt-1 border-b border-zinc-100 dark:border-zinc-800 mb-2">
-                  <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-xl px-2 py-1.5 focus-within:ring-2 ring-blue-500/30 transition-all">
-                    <Search className="w-3 h-3 text-zinc-400" />
+      {createPortal(
+        <AnimatePresence>
+          {isOpen && (
+            <div id="category-dropdown-portal" className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4 md:p-6">
+              {/* Backdrop with Deep Blur */}
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsOpen(false)}
+                className="absolute inset-0 bg-zinc-950/60 backdrop-blur-md"
+              />
+
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl rounded-[32px] border border-white/20 dark:border-white/10 shadow-2xl pointer-events-auto w-full max-w-sm overflow-hidden"
+              >
+                {/* Modal Header */}
+                <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-700/50 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/20">
+                  <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Оберіть категорію</span>
+                  <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-xl transition-colors">
+                    <X className="w-4 h-4 text-zinc-400" />
+                  </button>
+                </div>
+
+                {!isAdding ? (
+                  <div className="p-4 space-y-4">
+                    {/* Search & Tabs Section */}
+                    <div className="space-y-4">
+                      {/* Search Bar */}
+                      <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-900/50 rounded-xl px-3 py-2.5 focus-within:ring-2 ring-blue-500/50 transition-all border border-transparent dark:border-white/5">
+                        <Search className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+                        <input
+                          autoFocus
+                          type="text"
+                          placeholder="Пошук категорії..."
+                          value={search}
+                          onChange={e => setSearch(e.target.value)}
+                          className="bg-transparent border-none text-[12px] font-bold outline-none w-full text-zinc-900 dark:text-zinc-100"
+                        />
+                      </div>
+
+                      {/* Glassmorphism Sub-tabs */}
+                      <div className="flex bg-zinc-100/50 dark:bg-zinc-950/40 p-1 rounded-[18px] border border-zinc-200/50 dark:border-white/5 shadow-inner">
+                        {[
+                          { id: 'plan', label: 'План' },
+                          { id: 'recent', label: 'Недавні' },
+                          { id: 'accounts', label: 'Всі' },
+                          { id: 'goals', label: 'Цілі' }
+                        ].map(tab => (
+                          <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id as any)}
+                            className={`flex-1 py-2 rounded-[14px] text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+                              activeTab === tab.id
+                                ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-md ring-1 ring-zinc-200/50 dark:ring-white/10'
+                                : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
+                            }`}
+                          >
+                            {tab.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="max-h-[300px] overflow-y-auto pr-1 custom-scrollbar -mx-1 px-1">
+                      <div className="p-1 space-y-1">
+                        <button
+                          onClick={() => handleSelect('')}
+                          className="w-full text-left px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-tight text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors mb-2 border border-dashed border-zinc-200 dark:border-zinc-600 flex items-center justify-center gap-2 group"
+                        >
+                          <X className="w-3 h-3 group-hover:scale-110 transition-transform" />
+                          {placeholder}
+                        </button>
+
+                        {activeTab === 'recent' && (
+                          <div className="animate-in fade-in slide-in-from-left-2 duration-300">
+                            {recentCategories.length > 0 ? (
+                              <div className="premium-select-grid overflow-y-auto max-h-[40vh] p-4">
+                                {recentCategories.map(c => (
+                                  <button
+                                    key={c.id}
+                                    onClick={() => handleSelect(c.id)}
+                                    className={`category-chip ${currentCategoryId === c.id ? 'active' : 'bg-zinc-100 dark:bg-zinc-800'}`}
+                                  >
+                                    <div className={`w-3 h-3 rounded-full ${c.color} shadow-sm group-hover:scale-110 transition-transform`} />
+                                    <span className="text-[10px] font-black uppercase tracking-tight text-center leading-tight">
+                                      {c.name}
+                                    </span>
+                                    {currentCategoryId === c.id && <Check className="w-3 h-3 absolute top-2 right-2 text-white" />}
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="py-10 text-center bg-zinc-50/50 dark:bg-zinc-900/20 rounded-2xl mx-1 mb-2 border border-zinc-100 dark:border-white/5 border-dashed">
+                                <div className="text-[10px] font-black text-zinc-300 dark:text-zinc-600 uppercase tracking-[0.2em] mb-1">Порожньо</div>
+                                <div className="text-[8px] font-bold text-zinc-400/60 uppercase tracking-tight">Тут будуть ваші недавні категорії</div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {activeTab === 'plan' && (
+                          <div className="animate-in fade-in slide-in-from-left-2 duration-300">
+                            {plannedCategories.length > 0 ? (
+                              <div className="premium-select-grid overflow-y-auto max-h-[40vh] p-4">
+                                {plannedCategories.map(c => (
+                                  <button
+                                    key={c.id}
+                                    onClick={() => handleSelect(c.id)}
+                                    className={`category-chip ${currentCategoryId === c.id ? 'active' : 'bg-zinc-100 dark:bg-zinc-800'}`}
+                                  >
+                                    <div className={`w-3 h-3 rounded-full ${c.color} shadow-sm group-hover:scale-110 transition-transform`} />
+                                    <span className="text-[10px] font-black uppercase tracking-tight text-center leading-tight">
+                                      {c.name}
+                                    </span>
+                                    {currentCategoryId === c.id && <Check className="w-3 h-3 absolute top-2 right-2 text-white" />}
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="py-10 text-center bg-zinc-50/50 dark:bg-zinc-900/20 rounded-2xl mx-1 mb-2 border border-zinc-100 dark:border-white/5 border-dashed">
+                                <div className="text-[10px] font-black text-zinc-300 dark:text-zinc-600 uppercase tracking-[0.2em] mb-1">Порожньо</div>
+                                <div className="text-[8px] font-bold text-zinc-400/60 uppercase tracking-tight">Категорій у плані немає</div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {activeTab === 'accounts' && (
+                          <div className="animate-in fade-in slide-in-from-left-2 duration-300">
+                            {otherCategories.length > 0 ? (
+                              <div className="premium-select-grid overflow-y-auto max-h-[40vh] p-4">
+                                {otherCategories.map(c => (
+                                  <button
+                                    key={c.id}
+                                    onClick={() => handleSelect(c.id)}
+                                    className={`category-chip ${currentCategoryId === c.id ? 'active' : 'bg-zinc-100 dark:bg-zinc-800'}`}
+                                  >
+                                    <div className={`w-3 h-3 rounded-full ${c.color} shadow-sm group-hover:scale-110 transition-transform`} />
+                                    <span className="text-[10px] font-black uppercase tracking-tight text-center leading-tight">
+                                      {c.name}
+                                    </span>
+                                    {currentCategoryId === c.id && <Check className="w-3 h-3 absolute top-2 right-2 text-white" />}
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="py-10 text-center bg-zinc-50/50 dark:bg-zinc-900/20 rounded-2xl mx-1 mb-2 border border-zinc-100 dark:border-white/5 border-dashed">
+                                <div className="text-[10px] font-black text-zinc-300 dark:text-zinc-600 uppercase tracking-[0.2em] mb-1">Порожньо</div>
+                                <div className="text-[8px] font-bold text-zinc-400/60 uppercase tracking-tight">Інших категорій не знайдено</div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {activeTab === 'goals' && (
+                          <div className="animate-in fade-in slide-in-from-left-2 duration-300">
+                            {goalCategories.length > 0 ? (
+                              <div className="premium-select-grid overflow-y-auto max-h-[40vh] p-4">
+                                {goalCategories.map(c => (
+                                  <button
+                                    key={c.id}
+                                    onClick={() => handleSelect(c.id)}
+                                    className={`category-chip ${currentCategoryId === c.id ? 'active' : 'bg-zinc-100 dark:bg-zinc-800'}`}
+                                  >
+                                    <div className={`w-3 h-3 rounded-full ${c.color} shadow-sm group-hover:scale-110 transition-transform`} />
+                                    <span className="text-[10px] font-black uppercase tracking-tight text-center leading-tight">
+                                      {c.name}
+                                    </span>
+                                    {currentCategoryId === c.id && <Check className="w-3 h-3 absolute top-2 right-2 text-white" />}
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="py-10 text-center bg-zinc-50/50 dark:bg-zinc-900/20 rounded-2xl mx-1 mb-2 border border-zinc-100 dark:border-white/5 border-dashed">
+                                <div className="text-[10px] font-black text-zinc-300 dark:text-zinc-600 uppercase tracking-[0.2em] mb-1">Порожньо</div>
+                                <div className="text-[8px] font-bold text-zinc-400/60 uppercase tracking-tight">Цілей не знайдено</div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="p-2 pt-0">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setIsAdding(true); }}
+                        className="w-full py-3 border-t border-zinc-100 dark:border-zinc-800/50 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all rounded-b-[20px]"
+                      >
+                        <Plus className="w-3 h-3" />
+                        {activeTab === 'goals' ? 'Нова ціль' : 'Нова категорія'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-5 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Нова категорія</span>
+                      <button onClick={() => setIsAdding(false)} className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors"><X className="w-3.5 h-3.5 text-zinc-400" /></button>
+                    </div>
+                    
                     <input
                       autoFocus
                       type="text"
-                      placeholder="Пошук..."
-                      value={search}
-                      onChange={e => setSearch(e.target.value)}
-                      className="bg-transparent border-none text-[11px] font-bold outline-none w-full dark:text-white"
+                      placeholder="Назва..."
+                      value={newName}
+                      onChange={e => setNewName(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && newName) {
+                          onAdd(newName, type, newColor).then(id => { if (id) onSelect(id); setIsOpen(false); });
+                        }
+                      }}
+                      className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl text-xs font-bold outline-none ring-2 ring-transparent focus:ring-blue-500/50 transition-all dark:text-white"
                     />
-                  </div>
-                </div>
 
-                {quickCategories.length > 0 && !search && (
-                  <div className="px-2 pb-2 mb-1 border-b border-zinc-100 dark:border-zinc-800">
-                    <p className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.16em] mb-2">Швидкий вибір</p>
-                    <div className="grid grid-cols-2 gap-1">
-                      {quickCategories.map(c => (
+                    <div className="grid grid-cols-6 gap-2">
+                      {CATEGORY_COLORS.map(color => (
                         <button
-                          key={`quick-${c.id}`}
-                          onClick={() => { onSelect(c.id); setIsOpen(false); }}
-                          className={`px-2 py-1.5 rounded-lg flex items-center gap-2 transition-colors border ${currentCategoryId === c.id ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-transparent' : 'bg-zinc-50 dark:bg-zinc-800/60 border-zinc-100 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700'}`}
-                        >
-                          <div className={`w-2 h-2 rounded-full ${c.color} shrink-0`} />
-                          <span className="truncate text-[10px] font-bold uppercase tracking-tight">{c.name}</span>
-                        </button>
+                          key={color}
+                          onClick={() => setNewColor(color)}
+                          className={`w-full aspect-square rounded-lg ${color} transition-all duration-300 ${newColor === color ? 'ring-2 ring-offset-2 ring-blue-500 ring-offset-white dark:ring-offset-zinc-900 scale-110 shadow-lg' : 'opacity-60 hover:opacity-100'}`}
+                        />
                       ))}
                     </div>
+
+                    <button
+                      disabled={!newName}
+                      onClick={() => onAdd(newName, type, newColor).then(id => { if (id) onSelect(id); setIsOpen(false); })}
+                      className="w-full py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 disabled:shadow-none mt-2"
+                    >
+                      Створити категорію
+                    </button>
                   </div>
                 )}
-
-                <div className="max-h-[320px] overflow-y-auto pr-1 custom-scrollbar space-y-1">
-                  <button
-                    onClick={() => { onSelect(''); setIsOpen(false); }}
-                    className="w-full text-left px-2.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-tight text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors mb-2 border border-dashed border-zinc-200 dark:border-zinc-800 flex items-center justify-center gap-2 group"
-                  >
-                    <X className="w-3 h-3 group-hover:scale-110 transition-transform" />
-                    {placeholder}
-                  </button>
-
-                  {plannedCategories.length > 0 && (
-                    <div className="mb-4">
-                      <div className="px-3 py-1.5 text-[9px] font-black text-blue-500 dark:text-blue-400 uppercase tracking-[0.2em] mb-1 flex items-center gap-2">
-                        <div className="w-1 h-3 bg-blue-500 rounded-full" />
-                        У плані
-                      </div>
-                      {plannedCategories.map(c => (
-                        <button
-                          key={c.id}
-                          onClick={() => { onSelect(c.id); setIsOpen(false); }}
-                          className={`w-full text-left px-2.5 py-1.5 rounded-xl flex items-center gap-2.5 group transition-all mb-1 ${currentCategoryId === c.id ? 'bg-blue-50 dark:bg-blue-900/20 shadow-sm border border-blue-100 dark:border-blue-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50 border border-transparent'}`}
-                        >
-                          <div className={`w-2.5 h-2.5 rounded-full ${c.color} shadow-sm group-hover:scale-110 transition-transform`} />
-                          <span className={`text-[10px] font-bold uppercase tracking-tight ${currentCategoryId === c.id ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-700 dark:text-zinc-300'}`}>
-                            {c.name}
-                          </span>
-                          {currentCategoryId === c.id && <Check className="w-3.5 h-3.5 ml-auto text-blue-500" />}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {otherCategories.length > 0 && (
-                    <div className="mb-2">
-                      <div className="px-3 py-1.5 text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] mb-1 flex items-center gap-2">
-                        <div className="w-1 h-3 bg-zinc-300 dark:bg-zinc-700 rounded-full" />
-                        Інші категорії
-                      </div>
-                      {otherCategories.map(c => (
-                        <button
-                          key={c.id}
-                          onClick={() => { onSelect(c.id); setIsOpen(false); }}
-                          className={`w-full text-left px-2.5 py-1.5 rounded-xl flex items-center gap-2.5 group transition-all mb-1 ${currentCategoryId === c.id ? 'bg-zinc-100 dark:bg-zinc-800 shadow-sm border border-zinc-200 dark:border-zinc-700' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50 border border-transparent'}`}
-                        >
-                          <div className={`w-2.5 h-2.5 rounded-full ${c.color} shadow-sm opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all`} />
-                          <span className={`text-[10px] font-bold uppercase tracking-tight ${currentCategoryId === c.id ? 'text-zinc-900 dark:text-white' : 'text-zinc-500 dark:text-zinc-400'}`}>
-                            {c.name}
-                          </span>
-                          {currentCategoryId === c.id && <Check className="w-3.5 h-3.5 ml-auto text-zinc-400" />}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  onClick={(e) => { e.stopPropagation(); setIsAdding(true); }}
-                  className="w-full mt-2 py-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors rounded-b-[20px]"
-                >
-                  <Plus className="w-3 h-3" />
-                  Нова категорія
-                </button>
-              </div>
-            ) : (
-              <div className="p-5 space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Нова категорія</span>
-                  <button onClick={() => setIsAdding(false)} className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors"><X className="w-3.5 h-3.5 text-zinc-400" /></button>
-                </div>
-                
-                <input
-                  autoFocus
-                  type="text"
-                  placeholder="Назва..."
-                  value={newName}
-                  onChange={e => setNewName(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && newName) {
-                      onAdd(newName, type, newColor).then(id => { if (id) onSelect(id); setIsOpen(false); });
-                    }
-                  }}
-                  className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl text-xs font-bold outline-none ring-2 ring-transparent focus:ring-blue-500/50 transition-all dark:text-white"
-                />
-
-                <div className="grid grid-cols-6 gap-2">
-                  {CATEGORY_COLORS.map(color => (
-                    <button
-                      key={color}
-                      onClick={() => setNewColor(color)}
-                      className={`w-full aspect-square rounded-lg ${color} transition-all duration-300 ${newColor === color ? 'ring-2 ring-offset-2 ring-blue-500 ring-offset-white dark:ring-offset-zinc-900 scale-110 shadow-lg' : 'opacity-60 hover:opacity-100'}`}
-                    />
-                  ))}
-                </div>
-
-                <button
-                  disabled={!newName}
-                  onClick={() => onAdd(newName, type, newColor).then(id => { if (id) onSelect(id); setIsOpen(false); })}
-                  className="w-full py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 disabled:shadow-none mt-2"
-                >
-                  Створити категорію
-                </button>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }

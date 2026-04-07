@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Блок 2 — Цифрова економіка · Bitbon Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0b0f;--bg2:#111318;--bg3:#181b22;
+  --card:#1a1d26;--card2:#1f2330;
+  --border:#2a2d3a;--border2:#363a4a;
+  --text:#f0f1f5;--muted:#8b8fa8;--muted2:#5a5e72;
+  --accent:#3b82f6;--accent2:#1d4ed8;
+  --gold:#f59e0b;--gold2:#fbbf24;
+  --green:#10b981;--green2:#059669;
+  --purple:#8b5cf6;--red:#ef4444;
+  --teal:#14b8a6;--cyan:#06b6d4;
+  --r-md:10px;--r-lg:14px;--r-xl:20px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Manrope',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.6;min-height:100vh}
+.wrap{max-width:900px;margin:0 auto;padding:0 20px 100px}
+
+/* ── HEADER ── */
+.course-header{padding:32px 0 24px;border-bottom:1px solid var(--border);margin-bottom:28px}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.logo-mark{display:flex;align-items:center;gap:10px}
+.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--teal),var(--cyan));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff}
+.logo-text{font-size:15px;font-weight:700}
+.logo-text span{color:var(--teal)}
+.hdr-pills{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{background:var(--card2);border:1px solid var(--border2);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px}
+.pill.gold{color:var(--gold2)}.pill.teal{color:var(--teal)}
+.hdr-eyebrow{font-size:11px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.hdr-title{font-family:'Playfair Display',serif;font-size:clamp(22px,4vw,34px);line-height:1.2;margin-bottom:8px;background:linear-gradient(135deg,#fff 0%,var(--teal) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hdr-sub{font-size:14px;color:var(--muted);line-height:1.7}
+.xp-section{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 18px}
+.xp-meta{display:flex;justify-content:space-between;margin-bottom:8px}
+.xp-level-name{font-size:13px;font-weight:600}
+.xp-count{font-size:12px;color:var(--muted)}
+.xp-track{height:7px;background:var(--bg3);border-radius:4px;overflow:hidden;margin-bottom:5px}
+.xp-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--teal),var(--cyan));transition:width .6s cubic-bezier(.4,0,.2,1)}
+.xp-mile{display:flex;justify-content:space-between}
+.xp-m{font-size:10px;color:var(--muted2)}
+
+/* ── STATS ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:24px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);padding:12px 14px;text-align:center}
+.stat-v{font-size:20px;font-weight:700;margin-bottom:2px}
+.stat-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.stat.tc .stat-v{color:var(--teal)}.stat.g .stat-v{color:var(--gold2)}.stat.gr .stat-v{color:var(--green)}.stat.p .stat-v{color:var(--purple)}
+
+/* ── BADGES ── */
+.badges-row{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px;margin-bottom:20px}
+.badges-title{font-size:12px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.06em}
+.badges-grid{display:flex;gap:10px;flex-wrap:wrap}
+.badge-item{display:flex;flex-direction:column;align-items:center;gap:4px}
+.badge-ico{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid transparent;transition:all .2s}
+.badge-ico.earned{border-color:var(--teal);background:rgba(20,184,166,.1)}
+.badge-ico.locked{background:var(--bg3);filter:grayscale(1);opacity:.35}
+.badge-lbl{font-size:10px;color:var(--muted);text-align:center;max-width:48px;line-height:1.3}
+
+/* ── ROADMAP ── */
+.roadmap{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin-bottom:20px}
+.roadmap-title{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+.roadmap-steps{display:flex;gap:0;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+.roadmap-steps::-webkit-scrollbar{display:none}
+.rm-step{display:flex;align-items:center;flex-shrink:0}
+.rm-dot{width:32px;height:32px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);background:var(--bg3);transition:all .2s;cursor:default;position:relative}
+.rm-dot.done{background:var(--teal);border-color:var(--teal);color:#fff}
+.rm-dot.active{border-color:var(--teal);color:var(--teal);background:rgba(20,184,166,.1)}
+.rm-dot.active::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(20,184,166,.3)}
+.rm-line{width:28px;height:2px;background:var(--border);flex-shrink:0;transition:background .3s}
+.rm-line.done{background:var(--teal)}
+.rm-label{font-size:9px;color:var(--muted2);text-align:center;margin-top:4px;max-width:32px;line-height:1.2;display:block}
+.rm-wrap{display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+
+/* ── SEC LABEL ── */
+.sec-lbl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.sec-lbl::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── MODULE BLOCKS ── */
+.mod-block{background:var(--card);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;margin-bottom:8px;transition:border-color .2s}
+.mod-block.open{border-color:var(--border2)}
+.mod-block.done{border-color:rgba(20,184,166,.3)}
+.mod-hdr{display:flex;align-items:center;gap:12px;padding:18px 20px;cursor:pointer;user-select:none;transition:background .15s}
+.mod-hdr:hover{background:rgba(255,255,255,.02)}
+.mod-ico{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;position:relative}
+.done-mark{position:absolute;bottom:-3px;right:-3px;width:15px;height:15px;background:var(--teal);border-radius:50%;border:2px solid var(--card);display:flex;align-items:center;justify-content:center;font-size:8px}
+.mod-info{flex:1;min-width:0}
+.mod-num{font-size:10px;font-weight:600;color:var(--muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em}
+.mod-name{font-size:14px;font-weight:700;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mod-desc{font-size:11px;color:var(--muted)}
+.mod-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
+.mod-xp-tag{font-size:11px;font-weight:600;color:var(--gold2);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);padding:2px 8px;border-radius:8px}
+.mod-prog{display:flex;align-items:center;gap:5px}
+.prog-bar{width:56px;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--teal);border-radius:2px;transition:width .4s}
+.prog-txt{font-size:10px;color:var(--muted);min-width:26px;text-align:right}
+.mod-chev{font-size:13px;color:var(--muted2);transition:transform .3s;flex-shrink:0}
+.mod-block.open .mod-chev{transform:rotate(180deg)}
+
+/* ── LESSON ── */
+.lesson-body{display:none;border-top:1px solid var(--border)}
+.mod-block.open .lesson-body{display:block}
+.ltabs{display:flex;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--border);padding:0 20px;gap:2px}
+.ltabs::-webkit-scrollbar{display:none}
+.ltab{padding:11px 14px;font-size:12px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;font-family:'Manrope',sans-serif}
+.ltab:hover{color:var(--text)}
+.ltab.active{color:var(--teal);border-bottom-color:var(--teal)}
+.ltab.done{color:var(--green)}
+.lesson-content{padding:26px 24px}
+.step-panel{display:none}.step-panel.active{display:block}
+
+/* ── VIDEO ── */
+.vid-block{margin-bottom:24px}
+.vid-lbl{font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.vid-lbl::before{content:'▶';width:20px;height:20px;background:var(--teal);border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-size:8px;flex-shrink:0}
+.vid-frame{position:relative;padding-bottom:56.25%;background:var(--bg3);border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border)}
+.vid-frame iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none}
+.vid-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.vid-ph-icon{width:52px;height:52px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.25);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px}
+.vid-ph-txt{font-size:13px;color:var(--muted);text-align:center;max-width:260px;line-height:1.5}
+.vid-ph-url{font-size:11px;color:var(--teal);font-family:monospace;margin-top:2px;text-align:center;word-break:break-all;max-width:320px}
+.vid-dur{font-size:12px;color:var(--muted);margin-top:7px;display:flex;align-items:center;gap:4px}
+
+/* ── THEORY ── */
+.th2{font-size:17px;font-weight:700;margin-bottom:10px}
+.th3{font-size:14px;font-weight:600;margin:16px 0 8px}
+.tp{font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:10px}
+.tp strong{color:var(--text);font-weight:600}
+.tp em{color:var(--teal);font-style:normal}
+.box-i{border-left:3px solid var(--teal);background:rgba(20,184,166,.06);border-radius:0 var(--r-md) var(--r-md) 0;padding:13px 15px;margin:12px 0}
+.box-i .tag{font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.box-i p{font-size:13px;color:var(--muted);line-height:1.7}
+.box-i p strong{color:var(--text)}
+.box-w{border-left:3px solid var(--gold);background:rgba(245,158,11,.06);border-radius:0 var(--r-md) var(--r-md) 0;padding:13px 15px;margin:12px 0}
+.box-w p{font-size:13px;color:rgba(251,191,36,.85);line-height:1.7}
+.box-w p strong{color:var(--gold2)}
+.box-p{border-left:3px solid var(--purple);background:rgba(139,92,246,.06);border-radius:0 var(--r-md) var(--r-md) 0;padding:13px 15px;margin:12px 0}
+.box-p p{font-size:13px;color:rgba(167,139,250,.9);line-height:1.7}
+.box-p p strong{color:#c4b5fd}
+.formula{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r-md);padding:16px;margin:14px 0;text-align:center}
+.formula-main{font-size:18px;font-weight:700;margin-bottom:5px;font-family:'Playfair Display',serif}
+.formula-sub{font-size:12px;color:var(--muted)}
+
+/* ── TIMELINE (history) ── */
+.timeline{display:flex;flex-direction:column;gap:0;margin:16px 0}
+.tl-item{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+.tl-item:last-child{border-bottom:none}
+.tl-item:hover{background:rgba(255,255,255,.01)}
+.tl-left{display:flex;flex-direction:column;align-items:center;width:44px;flex-shrink:0}
+.tl-year{font-size:10px;font-weight:700;color:var(--teal);text-align:center;line-height:1.2;margin-bottom:4px}
+.tl-dot-c{width:10px;height:10px;border-radius:50%;background:var(--teal);flex-shrink:0}
+.tl-line-c{width:1px;flex:1;background:var(--border);margin-top:4px;min-height:20px}
+.tl-body{flex:1;padding-top:2px}
+.tl-title{font-size:13px;font-weight:600;margin-bottom:3px}
+.tl-desc{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* ── BLOCKCHAIN VISUAL ── */
+.blockchain-demo{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;margin:14px 0;overflow:hidden}
+.bc-title{font-size:12px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}
+.bc-chain{display:flex;align-items:center;gap:0;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+.bc-chain::-webkit-scrollbar{display:none}
+.bc-block{background:var(--card2);border:1px solid var(--border2);border-radius:var(--r-md);padding:12px;min-width:120px;flex-shrink:0;transition:border-color .2s}
+.bc-block:hover{border-color:var(--teal)}
+.bc-block-num{font-size:10px;font-weight:700;color:var(--teal);margin-bottom:4px}
+.bc-block-hash{font-size:9px;color:var(--muted2);font-family:monospace;word-break:break-all;margin-bottom:4px}
+.bc-block-data{font-size:11px;color:var(--muted);line-height:1.4}
+.bc-arrow{font-size:18px;color:var(--teal);padding:0 6px;flex-shrink:0}
+.bc-controls{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.bc-btn{padding:7px 14px;background:rgba(20,184,166,.1);border:1px solid rgba(20,184,166,.25);border-radius:var(--r-md);font-size:12px;font-weight:600;cursor:pointer;color:var(--teal);font-family:'Manrope',sans-serif;transition:all .15s}
+.bc-btn:hover{background:rgba(20,184,166,.2)}
+.bc-explain{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6;padding:10px 12px;background:rgba(255,255,255,.03);border-radius:var(--r-md)}
+
+/* ── TOKENIZATION VISUAL ── */
+.token-demo{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;margin:14px 0}
+.token-title{font-size:12px;font-weight:600;color:var(--purple);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}
+.token-asset{background:var(--card2);border:2px solid var(--border2);border-radius:var(--r-md);padding:14px;margin-bottom:12px;text-align:center}
+.token-asset-name{font-size:14px;font-weight:700;margin-bottom:4px}
+.token-asset-val{font-size:13px;color:var(--gold2)}
+.token-arrow{text-align:center;font-size:20px;color:var(--teal);margin-bottom:12px}
+.token-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.token-piece{background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(20,184,166,.15));border:1px solid rgba(139,92,246,.3);border-radius:var(--r-md);padding:8px 6px;text-align:center;cursor:pointer;transition:all .2s}
+.token-piece:hover{border-color:var(--purple);transform:scale(1.04)}
+.token-piece.owned{background:linear-gradient(135deg,rgba(20,184,166,.2),rgba(6,182,212,.2));border-color:var(--teal)}
+.token-piece-val{font-size:11px;font-weight:700;color:var(--purple)}
+.token-piece-lbl{font-size:9px;color:var(--muted);margin-top:2px}
+.token-piece.owned .token-piece-val{color:var(--teal)}
+.token-info{font-size:12px;color:var(--muted);text-align:center;margin-top:10px}
+.token-owned-count{color:var(--teal);font-weight:600}
+
+/* ── COMPARISON TABLE ── */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:14px 0}
+.cmp-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-md);padding:14px;text-align:center}
+.cmp-card.highlight{border-color:rgba(20,184,166,.4);background:rgba(20,184,166,.05)}
+.cmp-ico{font-size:24px;margin-bottom:8px}
+.cmp-title{font-size:13px;font-weight:700;margin-bottom:8px}
+.cmp-rows{text-align:left}
+.cmp-row{font-size:11px;color:var(--muted);padding:4px 0;border-bottom:1px solid var(--border);display:flex;gap:6px}
+.cmp-row:last-child{border-bottom:none}
+.cmp-row .ck{font-size:11px;flex-shrink:0}
+
+/* ── FLIP CARDS ── */
+.flipgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0}
+.flipcard{perspective:800px;height:124px;cursor:pointer}
+.flipcard-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.4,0,.2,1)}
+.flipcard.flipped .flipcard-inner{transform:rotateY(180deg)}
+.fc-front,.fc-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--r-md);padding:14px;display:flex;flex-direction:column;justify-content:center}
+.fc-front{background:var(--card2);border:1px solid var(--border2)}
+.fc-back{background:var(--bg3);border:1px solid var(--teal);transform:rotateY(180deg)}
+.fc-icon{font-size:22px;margin-bottom:7px}
+.fc-title{font-size:13px;font-weight:600;color:var(--text)}
+.fc-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.fc-answer{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* ── SCENARIO ── */
+.scenario{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px;margin:14px 0}
+.sc-story{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:14px;padding:12px 14px;background:rgba(255,255,255,.03);border-radius:var(--r-md);border:1px solid var(--border)}
+.sc-story strong{color:var(--text)}
+.sc-q{font-size:14px;font-weight:600;margin-bottom:11px}
+.sc-opts{display:flex;flex-direction:column;gap:7px}
+.sc-opt{padding:11px 14px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r-md);cursor:pointer;background:transparent;text-align:left;font-family:'Manrope',sans-serif;color:var(--muted);transition:all .15s;line-height:1.4}
+.sc-opt:hover:not(:disabled){background:rgba(255,255,255,.04);color:var(--text)}
+.sc-opt.good{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.4);color:var(--green)}
+.sc-opt.bad{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:var(--red)}
+.sc-res{margin-top:10px;padding:11px 14px;border-radius:var(--r-md);font-size:13px;line-height:1.6;display:none}
+.sc-res.show{display:block}
+.sc-res.ok{background:rgba(16,185,129,.1);color:var(--green);border:1px solid rgba(16,185,129,.2)}
+.sc-res.err{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+
+/* ── QUIZ ── */
+.quiz{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px;margin:14px 0}
+.quiz-q{font-size:14px;font-weight:600;margin-bottom:12px;line-height:1.5}
+.quiz-opts{display:flex;flex-direction:column;gap:7px}
+.q-opt{padding:11px 14px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r-md);cursor:pointer;background:transparent;text-align:left;font-family:'Manrope',sans-serif;color:var(--muted);transition:all .15s;line-height:1.4}
+.q-opt:hover:not(:disabled){background:rgba(255,255,255,.04);color:var(--text)}
+.q-opt.correct{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.4);color:var(--green)}
+.q-opt.wrong{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:var(--red)}
+.quiz-fb{margin-top:9px;padding:11px 13px;border-radius:var(--r-md);font-size:13px;display:none;line-height:1.5}
+.quiz-fb.ok{background:rgba(16,185,129,.1);color:var(--green);display:block}
+.quiz-fb.err{background:rgba(239,68,68,.1);color:var(--red);display:block}
+
+/* ── CHECKLIST ── */
+.task-list{list-style:none;padding:0;margin:12px 0}
+.task-item{display:flex;align-items:flex-start;gap:11px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:opacity .15s}
+.task-item:last-child{border-bottom:none}
+.task-item:hover{opacity:.8}
+.task-chk{width:19px;height:19px;border:1.5px solid var(--border2);border-radius:5px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.task-item.done .task-chk{background:var(--teal);border-color:var(--teal);color:#fff;font-size:10px}
+.task-txt{font-size:13px;color:var(--muted);line-height:1.5}
+.task-item.done .task-txt{color:var(--muted2);text-decoration:line-through}
+
+/* ── PYRAMID ── */
+.pyramid{display:flex;flex-direction:column;gap:5px;margin:12px 0}
+.pyr-item{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;cursor:pointer;transition:border-color .2s}
+.pyr-item.open{border-color:var(--border2)}
+.pyr-hd{display:flex;align-items:center;gap:9px;padding:12px 15px}
+.pyr-ico{font-size:17px;flex-shrink:0}
+.pyr-t{font-size:13px;font-weight:600;flex:1}
+.pyr-arr{font-size:11px;color:var(--muted2);transition:transform .25s}
+.pyr-item.open .pyr-arr{transform:rotate(180deg)}
+.pyr-bd{display:none;padding:0 15px 13px 41px;font-size:13px;color:var(--muted);line-height:1.7}
+.pyr-item.open .pyr-bd{display:block}
+.pyr-bd strong{color:var(--text)}
+
+/* ── HOMEWORK ── */
+.hw{background:linear-gradient(135deg,rgba(20,184,166,.07),rgba(6,182,212,.07));border:1px solid rgba(20,184,166,.2);border-radius:var(--r-lg);padding:18px;margin:18px 0}
+.hw-hd{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+.hw-icon{width:34px;height:34px;background:rgba(20,184,166,.15);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.hw-title{font-size:14px;font-weight:700}
+.hw-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.hw-task{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px}
+.hw-task strong{color:var(--text)}
+.hw-ta{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--r-md);padding:11px 13px;font-size:13px;color:var(--text);font-family:'Manrope',sans-serif;resize:vertical;min-height:86px;line-height:1.6;transition:border-color .15s}
+.hw-ta:focus{outline:none;border-color:var(--teal)}
+.hw-ta::placeholder{color:var(--muted2)}
+.hw-btn{padding:9px 18px;background:var(--teal);color:#fff;border:none;border-radius:var(--r-md);font-size:13px;font-weight:600;cursor:pointer;font-family:'Manrope',sans-serif;transition:opacity .15s;margin-top:9px}
+.hw-btn:hover{opacity:.85}
+
+/* ── STEP NAV ── */
+.step-nav{display:flex;justify-content:space-between;align-items:center;margin-top:22px;padding-top:18px;border-top:1px solid var(--border)}
+.btn-prev{padding:9px 16px;background:transparent;border:1px solid var(--border2);border-radius:var(--r-md);font-size:13px;font-weight:600;cursor:pointer;font-family:'Manrope',sans-serif;color:var(--muted);transition:all .15s}
+.btn-prev:hover{background:var(--card2);color:var(--text)}
+.btn-prev:disabled{opacity:.3;cursor:not-allowed}
+.s-dots{display:flex;gap:5px;align-items:center}
+.s-dot{width:7px;height:7px;border-radius:50%;background:var(--border2);transition:all .2s}
+.s-dot.active{background:var(--teal);width:18px;border-radius:3px}
+.s-dot.done{background:var(--green)}
+.btn-next{padding:9px 20px;background:var(--teal);color:#fff;border:none;border-radius:var(--r-md);font-size:13px;font-weight:600;cursor:pointer;font-family:'Manrope',sans-serif;transition:all .15s}
+.btn-next:hover{background:var(--cyan)}
+.btn-next.fin{background:var(--green)}
+.btn-next.fin:hover{background:var(--green2)}
+
+/* ── COMMUNITY (BLOCK 3 TEASER) ── */
+.block3-teaser{background:linear-gradient(135deg,var(--card2),rgba(139,92,246,.1));border:1px solid rgba(139,92,246,.25);border-radius:var(--r-xl);padding:28px 24px;margin-top:28px;text-align:center;display:none}
+.block3-teaser.show{display:block}
+.b3-ico{font-size:40px;margin-bottom:12px}
+.b3-title{font-family:'Playfair Display',serif;font-size:24px;margin-bottom:8px;background:linear-gradient(135deg,#fff,var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.b3-desc{font-size:13px;color:var(--muted);max-width:440px;margin:0 auto 18px;line-height:1.8}
+.b3-btn{padding:12px 28px;background:linear-gradient(135deg,var(--teal),var(--cyan));color:#fff;border:none;border-radius:var(--r-lg);font-size:14px;font-weight:700;cursor:pointer;font-family:'Manrope',sans-serif;transition:opacity .2s}
+.b3-btn:hover{opacity:.88}
+
+/* ── TOAST ── */
+.toast{position:fixed;top:18px;right:18px;background:var(--card2);border:1px solid var(--teal);border-radius:var(--r-md);padding:11px 16px;font-size:14px;font-weight:700;color:var(--teal);display:flex;align-items:center;gap:7px;opacity:0;transform:translateY(-8px) scale(.97);transition:all .3s;pointer-events:none;z-index:9999}
+.toast.show{opacity:1;transform:none}
+
+/* ── RESPONSIVE ── */
+@media(max-width:580px){
+  .stats-row{grid-template-columns:1fr 1fr}
+  .flipgrid{grid-template-columns:1fr}
+  .compare-grid{grid-template-columns:1fr}
+  .token-grid{grid-template-columns:repeat(5,1fr)}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<!-- ══ HEADER ══ -->
+<div class="course-header">
+  <div class="hdr-top">
+    <div class="logo-mark">
+      <div class="logo-icon">₿</div>
+      <div class="logo-text">Bitbon <span>Academy</span></div>
+    </div>
+    <div class="hdr-pills">
+      <div class="pill">🔥 <span id="streak-v">1</span> день</div>
+      <div class="pill gold">⚡ <span id="xp-total">0</span> XP</div>
+      <div class="pill teal">Блок 2 — Цифрова економіка</div>
+    </div>
+  </div>
+  <div class="hdr-eyebrow">Блок 2 з 3 · Цифрова економіка</div>
+  <h1 class="hdr-title">Гроші, блокчейн і<br>нова економіка</h1>
+  <p class="hdr-sub">15 уроків · Від бартеру до токенізації · Система Bitbon зсередини · One Space</p>
+  <div style="margin-top:16px" class="xp-section">
+    <div class="xp-meta">
+      <span class="xp-level-name" id="level-name">Рівень 1 — Дослідник 🔍</span>
+      <span class="xp-count"><span id="xp-cur">0</span> / <span id="xp-max">600</span> XP</span>
+    </div>
+    <div class="xp-track"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+    <div class="xp-mile"><span class="xp-m">0</span><span class="xp-m">600</span><span class="xp-m">1400</span><span class="xp-m">2800</span><span class="xp-m">5000+</span></div>
+  </div>
+</div>
+
+<!-- ══ STATS ══ -->
+<div class="stats-row">
+  <div class="stat tc"><div class="stat-v" id="s-mod">0/8</div><div class="stat-l">Модулів</div></div>
+  <div class="stat g"><div class="stat-v" id="s-xp">0</div><div class="stat-l">XP зароблено</div></div>
+  <div class="stat gr"><div class="stat-v" id="s-tasks">0</div><div class="stat-l">Завдань</div></div>
+  <div class="stat p"><div class="stat-v" id="s-days">1</div><div class="stat-l">Днів навчання</div></div>
+</div>
+
+<!-- ══ BADGES ══ -->
+<div class="badges-row">
+  <div class="badges-title">Досягнення Блоку 2</div>
+  <div class="badges-grid" id="badges-grid"></div>
+</div>
+
+<!-- ══ ROADMAP ══ -->
+<div class="roadmap">
+  <div class="roadmap-title">Прогрес по блоку</div>
+  <div class="roadmap-steps" id="roadmap-steps"></div>
+</div>
+
+<!-- ══ MODULES ══ -->
+<div class="sec-lbl">Програма Блоку 2</div>
+<div id="modules-container"></div>
+
+<!-- ══ BLOCK 3 TEASER ══ -->
+<div class="block3-teaser" id="block3-teaser">
+  <div class="b3-ico">🚀</div>
+  <div class="b3-title">Блок 3 — Бізнес і підприємництво</div>
+  <div class="b3-desc">Ви розумієте цифрову економіку та екосистему Bitbon. Наступний крок — навчитись заробляти в новій економіці, будувати бізнес і потрапити до закритого ком'юніті підприємців Bitbon.</div>
+  <button class="b3-btn" onclick="alert('Вставте посилання на Блок 3')">Перейти до Блоку 3 →</button>
+</div>
+
+</div><!-- /wrap -->
+
+<div class="toast" id="toast">⚡ +<span id="toast-v">0</span> XP — <span id="toast-l"></span></div>
+
+<script>
+// ─── CONSTANTS ───
+const fmt = n => Math.round(n).toLocaleString('uk-UA');
+const STORAGE_KEY = 'bitbon_block2_v1';
+
+const LEVELS = [
+  {min:0,   max:600,  name:"Дослідник 🔍"},
+  {min:600, max:1400, name:"Аналітик 📡"},
+  {min:1400,max:2800, name:"Технолог ⚙️"},
+  {min:2800,max:5000, name:"Новатор 🔷"},
+  {min:5000,max:99999,name:"Піонер нової економіки 🏆"}
+];
+
+const BADGES_DEF = [
+  {id:'historian',  icon:'📜', name:'Історик',       desc:'Історія грошей'},
+  {id:'crypter',    icon:'🔐', name:'Крипто-базис',  desc:'Як працює блокчейн'},
+  {id:'tokenizer',  icon:'🪙', name:'Токенізатор',   desc:'Токенізація активів'},
+  {id:'economist',  icon:'🌐', name:'Цифровий економіст',desc:'Трансформація економіки'},
+  {id:'platformer', icon:'🏗️', name:'Платформер',   desc:'Платформна економіка'},
+  {id:'spacer',     icon:'🚀', name:'One Space',      desc:'Модуль One Space'},
+  {id:'bitboner2',  icon:'🔷', name:'Bitbon Pro',     desc:'Система Bitbon глибоко'},
+  {id:'pioneer',    icon:'🏆', name:'Піонер',         desc:'Всі модулі пройдено'},
+];
+
+// ─── STATE ───
+function loadState() {
+  try { const r = localStorage.getItem(STORAGE_KEY); if(r) return JSON.parse(r); } catch(e){}
+  return {xp:0,completedModules:[],completedSteps:{},completedTasks:0,earnedBadges:[],activeModule:-1,activeSteps:{},hwAnswers:{},streak:1,lastVisit:new Date().toDateString()};
+}
+function saveState(){ try{localStorage.setItem(STORAGE_KEY,JSON.stringify(S));}catch(e){} }
+let S = loadState();
+const today = new Date().toDateString();
+if(S.lastVisit && S.lastVisit !== today){const d=(new Date(today)-new Date(S.lastVisit))/86400000;S.streak=d<=1?(S.streak||1)+1:1;S.lastVisit=today;saveState();}
+
+// ─── XP ───
+function addXP(amt, label){S.xp+=amt;S.completedTasks++;saveState();updateXPUI();showToast(amt,label);}
+function showToast(amt,label){const t=document.getElementById('toast');document.getElementById('toast-v').textContent=amt;document.getElementById('toast-l').textContent=label;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
+function updateXPUI(){
+  let lvl=LEVELS[0],idx=0;
+  for(let i=0;i<LEVELS.length;i++){if(S.xp>=LEVELS[i].min){lvl=LEVELS[i];idx=i;}}
+  const nxt=LEVELS[idx+1]||{min:99999};
+  const pct=Math.min(100,Math.round((S.xp-lvl.min)/(nxt.min-lvl.min)*100));
+  document.getElementById('xp-fill').style.width=pct+'%';
+  document.getElementById('level-name').textContent='Рівень '+(idx+1)+' — '+lvl.name;
+  document.getElementById('xp-cur').textContent=fmt(S.xp);
+  document.getElementById('xp-max').textContent=fmt(nxt.min);
+  document.getElementById('xp-total').textContent=fmt(S.xp);
+  document.getElementById('s-xp').textContent=fmt(S.xp);
+  document.getElementById('s-tasks').textContent=S.completedTasks;
+  document.getElementById('s-mod').textContent=S.completedModules.length+'/8';
+  document.getElementById('streak-v').textContent=S.streak;
+}
+
+// ─── BADGES ───
+function earnBadge(id){if(S.earnedBadges.includes(id))return;S.earnedBadges.push(id);saveState();const b=BADGES_DEF.find(x=>x.id===id);if(b)showToast(0,'🏅 Бейдж "'+b.name+'"!');renderBadges();}
+function renderBadges(){const g=document.getElementById('badges-grid');g.innerHTML=BADGES_DEF.map(b=>`<div class="badge-item" title="${b.desc}"><div class="badge-ico ${S.earnedBadges.includes(b.id)?'earned':'locked'}">${b.icon}</div><div class="badge-lbl">${b.name}</div></div>`).join('');}
+
+// ─── ROADMAP ───
+function renderRoadmap(){
+  const c=document.getElementById('roadmap-steps');
+  c.innerHTML=MODULES.map((m,i)=>`
+    <div class="rm-step">
+      <div class="rm-wrap">
+        <div class="rm-dot ${S.completedModules.includes(i)?'done':S.activeModule===i?'active':''}" title="${m.title}">${i+1}</div>
+        <span class="rm-label">${m.emoji}</span>
+      </div>
+      ${i<MODULES.length-1?`<div class="rm-line ${S.completedModules.includes(i)?'done':''}"></div>`:''}
+    </div>`).join('');
+}
+
+// ─── MODULE DATA ───
+const MODULES = [
+// ═══ MODULE 0: ІСТОРІЯ ГРОШЕЙ ═══
+{
+  id:0, emoji:"📜", color:"#854d0e", title:"Історія грошей",
+  desc:"Від бартеру до цифрових активів · 5000 років еволюції",
+  totalXP:200, badgeId:'historian',
+  steps:[
+    {
+      title:"Від бартеру до монет", xp:65,
+      videoUrl:"YOUR_YOUTUBE_URL_B2_1", videoDuration:"12–15 хв",
+      videoTitle:"Урок 1: 5000 років еволюції грошей — від мушель до Bitcoin",
+      content:`
+        <div class="th2">Гроші — найвидатніший винахід людства</div>
+        <p class="tp">До появи грошей люди обмінювались прямо — рибу на зерно, зерно на шкури. Це <strong>бартер</strong>. Проблема: щоб обмінятись, потрібно щоб обидві сторони мали саме те що треба одна одній. Математично — майже неможливо.</p>
+        <div class="box-i"><div class="tag">Проблема подвійного збігу потреб</div><p>Якщо я маю рибу і хочу зерно — мені потрібен рибалка якому потрібна саме моя риба. В місті з 1000 людей — шанс знайти такого збіг близький до нуля.</p></div>
+        <div class="timeline" id="tl-history">
+          <div class="tl-item" onclick="expandTL(this)">
+            <div class="tl-left"><div class="tl-year">~3000<br>до н.е.</div><div class="tl-dot-c"></div><div class="tl-line-c"></div></div>
+            <div class="tl-body"><div class="tl-title">Товарні гроші — зерно, худоба, мушлі</div><div class="tl-desc">Перші "гроші" — речі з цінністю самі по собі. Зерно в Єгипті, худоба в Греції, мушлі каурі в Азії та Африці.</div></div>
+          </div>
+          <div class="tl-item" onclick="expandTL(this)">
+            <div class="tl-left"><div class="tl-year">~600<br>до н.е.</div><div class="tl-dot-c"></div><div class="tl-line-c"></div></div>
+            <div class="tl-body"><div class="tl-title">Металеві монети — Лідія (Туреччина)</div><div class="tl-desc">Перші офіційні монети з електруму (сплав золота і срібла). Переваги: довговічність, ділимість, рідкість. Революція торгівлі.</div></div>
+          </div>
+          <div class="tl-item" onclick="expandTL(this)">
+            <div class="tl-left"><div class="tl-year">~800<br>н.е.</div><div class="tl-dot-c"></div><div class="tl-line-c"></div></div>
+            <div class="tl-body"><div class="tl-title">Паперові гроші — Китай, династія Тан</div><div class="tl-desc">Купці здавали золото в скарбницю, отримували "летючі гроші" — папірці. Зручно для довгих подорожей. Марко Поло привіз ідею в Європу.</div></div>
+          </div>
+          <div class="tl-item" onclick="expandTL(this)">
+            <div class="tl-left"><div class="tl-year">1944</div><div class="tl-dot-c"></div><div class="tl-line-c"></div></div>
+            <div class="tl-body"><div class="tl-title">Бреттон-Вудська система — долар як резерв</div><div class="tl-desc">Всі валюти прив'язані до долара, долар — до золота ($35/унція). США стають фінансовим центром світу.</div></div>
+          </div>
+          <div class="tl-item" onclick="expandTL(this)">
+            <div class="tl-left"><div class="tl-year">1971</div><div class="tl-dot-c"></div><div class="tl-line-c"></div></div>
+            <div class="tl-body"><div class="tl-title">Ніксон скасовує золотий стандарт</div><div class="tl-desc">Долар більше не забезпечений золотом. Всі валюти стають фіатними — тобто забезпеченими тільки довірою до держави.</div></div>
+          </div>
+          <div class="tl-item" onclick="expandTL(this)">
+            <div class="tl-left"><div class="tl-year">2009</div><div class="tl-dot-c"></div><div class="tl-line-c"></div></div>
+            <div class="tl-body"><div class="tl-title">Bitcoin — перші цифрові гроші без центру</div><div class="tl-desc">Сатоші Накамото запускає Bitcoin. Вперше в історії — гроші без банку, без держави, без посередника. Революція.</div></div>
+          </div>
+          <div class="tl-item" onclick="expandTL(this)">
+            <div class="tl-left"><div class="tl-year">2015<br>+</div><div class="tl-dot-c"></div></div>
+            <div class="tl-body"><div class="tl-title">Токенізація і цифрові активи нового покоління</div><div class="tl-desc">Ethereum, смарт-контракти, NFT, DeFi, Bitbon. Гроші перетворюються на програмовані активи. Починається нова ера.</div></div>
+          </div>
+        </div>
+        <div class="quiz">
+          <div class="quiz-q">Що таке фіатні гроші?</div>
+          <div class="quiz-opts">
+            <button class="q-opt" onclick="quiz(this,false,'Золото — це товарні гроші. Фіат — не забезпечений фізичним активом.')">Гроші забезпечені золотом</button>
+            <button class="q-opt" onclick="quiz(this,true,'Правильно! Фіат = довіра. Гривня, долар, євро — цінні тому що держава каже що вони цінні та змушує їх приймати.')">Гроші забезпечені тільки довірою до держави</button>
+            <button class="q-opt" onclick="quiz(this,false,'Криптовалюти — окремий тип. Фіат — державні паперові гроші.')">Цифрові криптовалюти</button>
+          </div>
+          <div class="quiz-fb"></div>
+        </div>`
+    },
+    {
+      title:"Проблеми фіатної системи", xp:75,
+      videoUrl:"YOUR_YOUTUBE_URL_B2_2", videoDuration:"14–16 хв",
+      videoTitle:"Урок 2: Чому стара фінансова система не справляється — і що далі",
+      content:`
+        <div class="th2">Чому потрібна нова система?</div>
+        <p class="tp">Фіатна система прослужила 50 років, але вже тріщить. Глобальна криза 2008, інфляція 2022–2024, банківські колапси — <strong>це симптоми системної проблеми.</strong></p>
+        <div class="flipgrid">
+          <div class="flipcard" onclick="this.classList.toggle('flipped')"><div class="flipcard-inner"><div class="fc-front"><div class="fc-icon">📉</div><div class="fc-title">Інфляція</div><div class="fc-sub">В чому проблема?</div></div><div class="fc-back"><div class="fc-answer">Центральні банки друкують гроші → купівельна спроможність падає. $100 в 1971 = $770 сьогодні за тою ж купівельною спроможністю.</div></div></div></div>
+          <div class="flipcard" onclick="this.classList.toggle('flipped')"><div class="flipcard-inner"><div class="fc-front"><div class="fc-icon">🏦</div><div class="fc-title">Посередники</div><div class="fc-sub">В чому проблема?</div></div><div class="fc-back"><div class="fc-answer">Банк між вами і вашими грошима: комісії, затримки, заморозки, банкрутства. Ви не повністю контролюєте свої кошти.</div></div></div></div>
+          <div class="flipcard" onclick="this.classList.toggle('flipped')"><div class="flipcard-inner"><div class="fc-front"><div class="fc-icon">🌍</div><div class="fc-title">Нерівний доступ</div><div class="fc-sub">В чому проблема?</div></div><div class="fc-back"><div class="fc-answer">1.4 мільярда людей не мають банківського рахунку. Але мають смартфон. Традиційні фінанси їх виключають.</div></div></div></div>
+          <div class="flipcard" onclick="this.classList.toggle('flipped')"><div class="flipcard-inner"><div class="fc-front"><div class="fc-icon">🎭</div><div class="fc-title">Непрозорість</div><div class="fc-sub">В чому проблема?</div></div><div class="fc-back"><div class="fc-answer">Ви не знаєте куди йдуть ваші гроші в банку. Кому він їх позичає. Які ризики несе. Система непрозора за дизайном.</div></div></div></div>
+        </div>
+        <div class="box-p"><p>💡 Саме ці проблеми і вирішує <strong>блокчейн і цифрові активи</strong>: децентралізація, прозорість, програмованість, доступність для всіх.</p></div>
+        <div class="hw">
+          <div class="hw-hd"><div class="hw-icon">📝</div><div><div class="hw-title">Домашнє завдання</div><div class="hw-sub">Після перегляду відео</div></div></div>
+          <div class="hw-task">Подумайте: <strong>яку проблему фіатної системи ви особисто відчуваєте найбільше?</strong> Інфляція, банківські комісії, закритість, щось інше? Як це впливає на ваше фінансове життя?</div>
+          <textarea class="hw-ta" id="hw-0-1" placeholder="Найбільша проблема для мене: ...&#10;Як це проявляється: ...&#10;Що я хотів би мати натомість: ..."></textarea>
+          <button class="hw-btn" onclick="saveHW(this,'0-1')">Зберегти ✓</button>
+        </div>`
+    }
+  ]
+},
+// ═══ MODULE 1: БЛОКЧЕЙН ═══
+{
+  id:1, emoji:"🔐", color:"#1e40af", title:"Як працює блокчейн",
+  desc:"Хеші · Блоки · Децентралізація · Консенсус",
+  totalXP:260, badgeId:'crypter',
+  steps:[
+    {
+      title:"Блокчейн — що це насправді", xp:80,
+      videoUrl:"YOUR_YOUTUBE_URL_B2_3", videoDuration:"14–18 хв",
+      videoTitle:"Урок 3: Блокчейн простими словами — без технічного жаргону",
+      content:`
+        <div class="th2">Блокчейн — це не Bitcoin. Це технологія.</div>
+        <p class="tp">Блокчейн — це <strong>розподілена база даних</strong>, де кожен запис (блок) пов'язаний з попереднім криптографічно. Змінити один запис — неможливо, не змінивши всі наступні на всіх копіях одночасно.</p>
+        <div class="blockchain-demo">
+          <div class="bc-title">🔗 Інтерактивна демонстрація блокчейну</div>
+          <div class="bc-chain" id="bc-chain"></div>
+          <div class="bc-controls">
+            <button class="bc-btn" onclick="addBlock()">+ Додати транзакцію</button>
+            <button class="bc-btn" onclick="tryHack()">⚠️ Спробувати підробити</button>
+            <button class="bc-btn" onclick="resetChain()">↺ Скинути</button>
+          </div>
+          <div class="bc-explain" id="bc-explain">Натисніть "Додати транзакцію" щоб побачити як формується блок і як він пов'язується з попереднім через хеш.</div>
+        </div>
+        <div class="box-i"><div class="tag">Хеш — цифровий відбиток</div><p>Будь-який текст → алгоритм SHA-256 → унікальний код з 64 символів. Змінити хоча б одну букву → повністю інший хеш. Підробити дані і зберегти хеш — <strong>математично неможливо.</strong></p></div>
+        <div class="quiz">
+          <div class="quiz-q">Чому неможливо підробити дані в блокчейні?</div>
+          <div class="quiz-opts">
+            <button class="q-opt" onclick="quiz(this,false,'Шифрування є, але головний захист — в структурі ланцюга блоків.')">Дані зашифровані</button>
+            <button class="q-opt" onclick="quiz(this,true,'Правильно! Кожен блок містить хеш попереднього. Зміна одного блоку ламає всі наступні — а копії ланцюга є у тисяч вузлів одночасно.')">Кожен блок містить хеш попереднього і тисячі копій у мережі</button>
+            <button class="q-opt" onclick="quiz(this,false,'Паролі тут не причому. Захист — математичний і структурний.')">Потрібен пароль адміністратора</button>
+          </div>
+          <div class="quiz-fb"></div>
+        </div>`
+    },
+    {
+      title:"Децентралізація і консенсус", xp:80,
+      videoUrl:"YOUR_YOUTUBE_URL_B2_4", videoDuration:"12–15 хв",
+      videoTitle:"Урок 4: Децентралізація — чому немає центру і що це дає",
+      content:`
+        <div class="th2">Тисячі незалежних вузлів замість одного сервера</div>
+        <p class="tp">Традиційна база даних: один сервер → один власник → один центр контролю. Блокчейн: тисячі вузлів по всьому світу → жодного власника → <strong>неможливо вимкнути або контролювати.</strong></p>
+        <div class="compare-grid">
+          <div class="cmp-card">
+            <div class="cmp-ico">🏦</div>
+            <div class="cmp-title">Централізована БД</div>
+            <div class="cmp-rows">
+              <div class="cmp-row"><span class="ck">❌</span>Один сервер — одна точка відказу</div>
+              <div class="cmp-row"><span class="ck">❌</span>Власник контролює дані</div>
+              <div class="cmp-row"><span class="ck">❌</span>Можна заблокувати рахунок</div>
+              <div class="cmp-row"><span class="ck">❌</span>Непрозорість операцій</div>
+              <div class="cmp-row"><span class="ck">✅</span>Висока швидкість</div>
+            </div>
+          </div>
+          <div class="cmp-card highlight">
+            <div class="cmp-ico">🔗</div>
+            <div class="cmp-title">Блокчейн</div>
+            <div class="cmp-rows">
+              <div class="cmp-row"><span class="ck">✅</span>Тисячі вузлів — немає центру</div>
+              <div class="cmp-row"><span class="ck">✅</span>Дані належать всім учасникам</div>
+              <div class="cmp-row"><span class="ck">✅</span>Неможливо заморозити</div>
+              <div class="cmp-row"><span class="ck">✅</span>Публічна перевірка операцій</div>
+              <div class="cmp-row"><span class="ck">⚠️</span>Нижча швидкість (компроміс)</div>
+            </div>
+          </div>
+          <div class="cmp-card">
+            <div class="cmp-ico">🔷</div>
+            <div class="cmp-title">Bitbon (гібрид)</div>
+            <div class="cmp-rows">
+              <div class="cmp-row"><span class="ck">✅</span>Блокчейн-основа системи</div>
+              <div class="cmp-row"><span class="ck">✅</span>Публічний контракт</div>
+              <div class="cmp-row"><span class="ck">✅</span>Прозорість операцій</div>
+              <div class="cmp-row"><span class="ck">✅</span>Юридична забезпеченість</div>
+              <div class="cmp-row"><span class="ck">✅</span>Практична швидкість</div>
+            </div>
+          </div>
+        </div>
+        <div class="box-i"><div class="tag">Механізми консенсусу</div><p><strong>Proof of Work (Bitcoin):</strong> комп'ютери змагаються у розв'язанні задачі — переміг → записав блок. Надійно, але енерговитратно.<br><strong>Proof of Stake (Ethereum):</strong> право записати блок отримує той, хто "поставив" більше монет. Ефективніше.</p></div>
+        <ul class="task-list" id="tl-1-1">
+          <li class="task-item" onclick="task(this,'tl-1-1',0,15)"><span class="task-chk"></span><span class="task-txt">Я розумію що таке хеш і чому він захищає від підробки</span></li>
+          <li class="task-item" onclick="task(this,'tl-1-1',1,15)"><span class="task-chk"></span><span class="task-txt">Я розумію різницю між централізованою БД і блокчейном</span></li>
+          <li class="task-item" onclick="task(this,'tl-1-1',2,15)"><span class="task-chk"></span><span class="task-txt">Я можу пояснити децентралізацію простими словами іншій людині</span></li>
+        </ul>`
+    },
+    {
+      title:"Смарт-контракти", xp:80,
+      videoUrl:"YOUR_YOUTUBE_URL_B2_5", videoDuration:"12–14 хв",
+      videoTitle:"Урок 5: Смарт-контракти — програмовані угоди без нотаріуса",
+      content:`
+        <div class="th2">Контракт що виконується сам — без посередника</div>
+        <p class="tp">Смарт-контракт — це <strong>програмний код на блокчейні</strong>, який автоматично виконується при настанні умов. Якщо A → то B. Без юриста, нотаріуса, банку, суду.</p>
+        <div class="formula"><div class="formula-main">ЯКЩО умова → ТО дія</div><div class="formula-sub">Автоматично · Незмінно · Прозоро · Без довіри до третьої сторони</div></div>
+        <div class="box-i"><div class="tag">Приклад з нерухомістю</div><p>Традиційно: підписання → нотаріус → банк → реєстрація → 2 тижні і $2000 комісій.<br><strong>Смарт-контракт:</strong> оплата надійшла → право власності переходить автоматично → запис в блокчейні. Хвилини. Без комісій.</p></div>
+        <div class="scenario">
+          <div class="sc-story"><strong>Ситуація:</strong> Ви купуєте частку в проекті через Contributing у Bitbon. Смарт-контракт фіксує умови публічного контракту. Що відбувається якщо умови не виконуються?</div>
+          <div class="sc-q">Яка головна перевага смарт-контракту в Contributing?</div>
+          <div class="sc-opts" id="sc-1-2">
+            <button class="sc-opt" onclick="scen('sc-1-2',this,false,'⚠️ Юридичний захист важливий, але головна перевага — автоматичність і прозорість без залежності від третіх сторін.')">Можна подати в суд на розробника</button>
+            <button class="sc-opt" onclick="scen('sc-1-2',this,true,'✅ Правильно! Умови зафіксовані в коді на блокчейні — публічно і незмінно. Всі учасники бачать правила і виконання автоматичне.')">Умови публічні, незмінні і виконуються автоматично</button>
+            <button class="sc-opt" onclick="scen('sc-1-2',this,false,'❌ Швидкість важлива, але не головна перевага смарт-контрактів.')">Транзакції відбуваються швидше</button>
+          </div>
+          <div class="sc-res" id="sc-1-2-res"></div>
+        </div>`
+    }
+  ]
+},
+// ═══ MODULE 2: ТОКЕНІЗАЦІЯ ═══
+{
+  id:2, emoji:"🪙", color:"#7e22ce", title:"Токенізація активів",
+  desc:"Що таке токен · Типи токенів · Як токенізувати реальний актив",
+  totalXP:280, badgeId:'tokenizer',
+  steps:[
+    {
+      title:"Що таке токен і токенізація", xp:90,
+      videoUrl:"YOUR_YOUTUBE_URL_B2_6", videoDuration:"14–16 хв",
+      videoTitle:"Урок 6: Токенізація — як будь-який актив стає цифровим",
+      content:`
+        <div class="th2">Токен = цифрове представлення права</div>
+        <p class="tp">Токен — це <strong>запис на блокчейні, що представляє право</strong>: власності, голосу, доступу, доходу. Токенізація — це перетворення будь-якого реального активу на токени.</p>
+        <div class="token-demo">
+          <div class="token-title">🏠 Інтерактивна демонстрація токенізації</div>
+          <div class="token-asset">
+            <div class="token-asset-name">🏠 Офісна будівля у Києві</div>
+            <div class="token-asset-val">Вартість: 50 000 000 грн</div>
+          </div>
+          <div class="token-arrow">↓ Токенізація на 10 частин ↓</div>
+          <div class="token-grid" id="token-grid"></div>
+          <div class="token-info">Натисніть на частку щоб "купити" її. Ви вже маєте: <span class="token-owned-count" id="token-count">0</span> / 10 часток</div>
+        </div>
+        <div class="pyramid">
+          <div class="pyr-item open" onclick="pyr(this)"><div class="pyr-hd"><span class="pyr-ico">💎</span><span class="pyr-t">Utility токени — доступ до сервісу</span><span class="pyr-arr">▾</span></div><div class="pyr-bd">Дають право користуватись продуктом або сервісом. Наприклад: токен що дає доступ до платформи, знижку, пріоритет.</div></div>
+          <div class="pyr-item" onclick="pyr(this)"><div class="pyr-hd"><span class="pyr-ico">📈</span><span class="pyr-t">Security токени — частка у прибутку</span><span class="pyr-arr">▾</span></div><div class="pyr-bd">Аналог акцій — дають право на частину прибутку або управління. Регулюються як цінні папери. <strong>Projectbon в Bitbon System — це security token.</strong></div></div>
+          <div class="pyr-item" onclick="pyr(this)"><div class="pyr-hd"><span class="pyr-ico">🏠</span><span class="pyr-t">Asset-backed токени — забезпечені реальним майном</span><span class="pyr-arr">▾</span></div><div class="pyr-bd">Кожен токен = частина реального активу (нерухомість, золото, мистецтво). <strong>Bitbon — це asset-backed токен від активів Simcord.</strong></div></div>
+          <div class="pyr-item" onclick="pyr(this)"><div class="pyr-hd"><span class="pyr-ico">🖼️</span><span class="pyr-t">NFT — унікальні токени</span><span class="pyr-arr">▾</span></div><div class="pyr-bd">Non-Fungible Token — кожен унікальний. Не взаємозамінний. Використовується для цифрового мистецтва, колекцій, підтвердження автентичності.</div></div>
+        </div>`
+    },
+    {
+      title:"Переваги токенізації", xp:90,
+      videoUrl:"YOUR_YOUTUBE_URL_B2_7", videoDuration:"12–15 хв",
+      videoTitle:"Урок 7: Чому токенізація змінить все — від нерухомості до авторських прав",
+      content:`
+        <div class="th2">Токенізація вирішує проблеми традиційних ринків</div>
+        <p class="tp">Купити частку в офісному будинку раніше — мільйони гривень і юридичний лабіринт. Тепер — токен за $100 і 5 хвилин. <strong>Токенізація демократизує доступ до активів.</strong></p>
+        <div class="compare-grid">
+          <div class="cmp-card">
+            <div class="cmp-ico">🏢</div>
+            <div class="cmp-title">Традиційна нерухомість</div>
+            <div class="cmp-rows">
+              <div class="cmp-row"><span class="ck">❌</span>Вхід від $100 000+</div>
+              <div class="cmp-row"><span class="ck">❌</span>Продаж — місяці</div>
+              <div class="cmp-row"><span class="ck">❌</span>Нотаріус, реєстрація</div>
+              <div class="cmp-row"><span class="ck">❌</span>Тільки своя країна</div>
+            </div>
+          </div>
+          <div class="cmp-card highlight">
+            <div class="cmp-ico">🪙</div>
+            <div class="cmp-title">Токенізована нерухомість</div>
+            <div class="cmp-rows">
+              <div class="cmp-row"><span class="ck">✅</span>Вхід від $10</div>
+              <div class="cmp-row"><span class="ck">✅</span>Продаж — хвилини</div>
+              <div class="cmp-row"><span class="ck">✅</span>Смарт-контракт</div>
+              <div class="cmp-row"><span class="ck">✅</span>Весь світ</div>
+            </div>
+          </div>
+          <div class="cmp-card">
+            <div class="cmp-ico">🔷</div>
+            <div class="cmp-title">Meta-активи Bitbon</div>
+            <div class="cmp-rows">
+              <div class="cmp-row"><span class="ck">✅</span>Будь-який актив</div>
+              <div class="cmp-row"><span class="ck">✅</span>Публічний контракт</div>
+              <div class="cmp-row"><span class="ck">✅</span>Аудит проектів</div>
+              <div class="cmp-row"><span class="ck">✅</span>Юридична база</div>
+            </div>
+          </div>
+        </div>
+        <div class="hw">
+          <div class="hw-hd"><div class="hw-icon">📝</div><div><div class="hw-title">Домашнє завдання</div><div class="hw-sub">Практичне мислення</div></div></div>
+          <div class="hw-task">Уявіть що ви можете токенізувати <strong>будь-який актив</strong> у вашому місті або країні. Що б ви обрали? Чому саме це? Яка його вартість і як би ви розділили на токени?</div>
+          <textarea class="hw-ta" id="hw-2-1" placeholder="Актив для токенізації: ...&#10;Чому саме він: ...&#10;Орієнтовна вартість: ...&#10;Кількість токенів і ціна одного: ...&#10;Хто б купив і навіщо: ..."></textarea>
+          <button class="hw-btn" onclick="saveHW(this,'2-1')">Зберегти ✓</button>
+        </div>`
+    }
+  ]
+},
+// ═══ MODULE 3: ТРАНСФОРМАЦІЯ ЕКОНОМІКИ ═══
+{
+  id:3, emoji:"🌐", color:"#065f46", title:"Трансформація світової економіки",
+  desc:"Web3 · DeFi · Цифрові валюти центробанків · Нова реальність",
+  totalXP:260, badgeId:'economist',
+  steps:[
+    {
+      title:"Web1 → Web2 → Web3", xp:80,
+      videoUrl:"YOUR_YOUTUBE_URL_B2_8", videoDuration:"14–17 хв",
+      videoTitle:"Урок 8: Три епохи інтернету — де ми зараз і куди йдемо",
+      content:`
+        <div class="th2">Інтернет трансформується — і разом з ним економіка</div>
+        <div class="compare-grid">
+          <div class="cmp-card">
+            <div class="cmp-ico">📖</div>
+            <div class="cmp-title">Web1 (1991–2004)</div>
+            <div class="cmp-rows">
+              <div class="cmp-row"><span class="ck">→</span>Тільки читання</div>
+              <div class="cmp-row"><span class="ck">→</span>Статичні сайти</div>
+              <div class="cmp-row"><span class="ck">→</span>Немає взаємодії</div>
+              <div class="cmp-row"><span class="ck">→</span>Децентралізований</div>
+            </div>
+          </div>
+          <div class="cmp-card">
+            <div class="cmp-ico">👥</div>
+            <div class="cmp-title">Web2 (2004–зараз)</div>
+            <div class="cmp-rows">
+              <div class="cmp-row"><span class="ck">→</span>Читання + запис</div>
+              <div class="cmp-row"><span class="ck">→</span>Соцмережі, платформи</div>
+              <div class="cmp-row"><span class="ck">→</span>Дані = товар</div>
+              <div class="cmp-row"><span class="ck">→</span>Монополії (Google, Meta)</div>
+            </div>
+          </div>
+          <div class="cmp-card highlight">
+            <div class="cmp-ico">🔷</div>
+            <div class="cmp-title">Web3 (зараз+)</div>
+            <div class="cmp-rows">
+              <div class="cmp-row"><span class="ck">✅</span>Читання + запис + власність</div>
+              <div class="cmp-row"><span class="ck">✅</span>Блокчейн-платформи</div>
+              <div class="cmp-row"><span class="ck">✅</span>Ви = власник даних</div>
+              <div class="cmp-row"><span class="ck">✅</span>Децентралізований</div>
+            </div>
+          </div>
+        </div>
+        <div class="box-i"><div class="tag">CBDC — цифрові валюти центробанків</div><p>Понад 130 країн досліджують або запускають CBDC. Цифровий євро, цифровий долар, е-гривня. <strong>Це не крипто — це фіат у цифровому форматі.</strong> Повний контроль держави + зручність цифрових платежів.</p></div>
+        <div class="quiz">
+          <div class="quiz-q">Головна відмінність Web3 від Web2?</div>
+          <div class="quiz-opts">
+            <button class="q-opt" onclick="quiz(this,false,'Швидкість — технічний параметр. Принципова різниця — в правах власності.')">Вищa швидкість передачі даних</button>
+            <button class="q-opt" onclick="quiz(this,true,'Правильно! У Web2 ваші дані і контент належать платформі. У Web3 — вам. Завдяки блокчейну і смарт-контрактам.')">Власність над даними і цифровими активами</button>
+            <button class="q-opt" onclick="quiz(this,false,'Кращий дизайн — не суть революції Web3.')">Кращий дизайн і зручність</button>
+          </div>
+          <div class="quiz-fb"></div>
+        </div>`
+    },
+    {
+      title:"DeFi і нова фінансова система", xp:90,
+      videoUrl:"YOUR_YOUTUBE_URL_B2_9", videoDuration:"15–18 хв",
+      videoTitle:"Урок 9: DeFi — фінанси без банків і що це означає для кожного",
+      content:`
+        <div class="th2">DeFi — Decentralized Finance</div>
+        <p class="tp">DeFi — це фінансові послуги (кредити, депозити, обмін, страхування) побудовані на смарт-контрактах, без банків і посередників. <strong>Відкриті для будь-кого з інтернетом.</strong></p>
+        <div class="pyramid">
+          <div class="pyr-item open" onclick="pyr(this)"><div class="pyr-hd"><span class="pyr-ico">💱</span><span class="pyr-t">DEX — децентралізовані біржі</span><span class="pyr-arr">▾</span></div><div class="pyr-bd">Обмін токенів без центральної біржі. Uniswap, PancakeSwap. Смарт-контракт автоматично знаходить ціну і виконує обмін. Ніхто не тримає ваші кошти.</div></div>
+          <div class="pyr-item" onclick="pyr(this)"><div class="pyr-hd"><span class="pyr-ico">🏦</span><span class="pyr-t">Протоколи кредитування</span><span class="pyr-arr">▾</span></div><div class="pyr-bd">Позичайте під заставу токенів або давайте в борг — автоматично. Aave, Compound. Відсотки нараховуються посекундно. Умови — смарт-контракт.</div></div>
+          <div class="pyr-item" onclick="pyr(this)"><div class="pyr-hd"><span class="pyr-ico">📊</span><span class="pyr-t">Yield farming — фармінг дохідності</span><span class="pyr-arr">▾</span></div><div class="pyr-bd">Надання ліквідності в пули обміну в обмін на частину комісій. Пасивний дохід від ваших активів. Ризики: волатильність і смарт-контракт помилки.</div></div>
+          <div class="pyr-item" onclick="pyr(this)"><div class="pyr-hd"><span class="pyr-ico">🔷</span><span class="pyr-t">Contributing у Bitbon — DeFi нового покоління</span><span class="pyr-arr">▾</span></div><div class="pyr-bd">Contributing поєднує DeFi-принципи з юридичною базою і аудитом. <strong>Кращі риси обох світів:</strong> прозорість блокчейну + правовий захист реальних активів.</div></div>
+        </div>
+        <div class="box-w"><p>⚠️ <strong>Ризики DeFi:</strong> Смарт-контракти можуть мати помилки у коді. Хакерські атаки на протоколи. Регуляторна невизначеність. Завжди досліджуйте перед входом.</p></div>`
+    }
+  ]
+},
+// ═══ MODULE 4: ПЛАТФОРМНА ЕКОНОМІКА ═══
+{
+  id:4, emoji:"🏗️", color:"#0f766e", title:"Платформна економіка",
+  desc:"Amazon · Uber · Нова модель · Як платформи змінили бізнес",
+  totalXP:240, badgeId:'platformer',
+  steps:[
+    {
+      title:"Що таке платформна економіка", xp:80,
+      videoUrl:"YOUR_YOUTUBE_URL_B2_10", videoDuration:"12–15 хв",
+      videoTitle:"Урок 10: Чому Amazon багатший за магазини — і як це пов'язано з Bitbon",
+      content:`
+        <div class="th2">Платформа = ринок, а не виробник</div>
+        <p class="tp">Amazon не виробляє товари. Uber не має машин. Airbnb не має готелів. <strong>Вони — платформи:</strong> з'єднують продавців і покупців, беруть комісію. Це найприбутковіша бізнес-модель 21 століття.</p>
+        <div class="flipgrid">
+          <div class="flipcard" onclick="this.classList.toggle('flipped')"><div class="flipcard-inner"><div class="fc-front"><div class="fc-icon">🛍️</div><div class="fc-title">Amazon</div><div class="fc-sub">Як заробляє?</div></div><div class="fc-back"><div class="fc-answer">Не продає товари — дає інфраструктуру мільйонам продавців. Комісія 8–15% з кожного продажу. Вартість: $1.8 трлн.</div></div></div></div>
+          <div class="flipcard" onclick="this.classList.toggle('flipped')"><div class="flipcard-inner"><div class="fc-front"><div class="fc-icon">🚗</div><div class="fc-title">Uber</div><div class="fc-sub">Як заробляє?</div></div><div class="fc-back"><div class="fc-answer">Нуль власних автомобілів. З'єднує водіїв і пасажирів. 25% з кожної поїздки. Вартість: $100 млрд.</div></div></div></div>
+          <div class="flipcard" onclick="this.classList.toggle('flipped')"><div class="flipcard-inner"><div class="fc-front"><div class="fc-icon">🔷</div><div class="fc-title">Bitbon System</div><div class="fc-sub">Як заробляє?</div></div><div class="fc-back"><div class="fc-answer">Платформа для токенізації відносин між бізнесом, державою і громадянами. Contributing — механізм залучення капіталу в проекти.</div></div></div></div>
+          <div class="flipcard" onclick="this.classList.toggle('flipped')"><div class="flipcard-inner"><div class="fc-front"><div class="fc-icon">📱</div><div class="fc-title">Дія (Україна)</div><div class="fc-sub">Що це таке?</div></div><div class="fc-back"><div class="fc-answer">Державна платформа — з'єднує громадянина і державні сервіси. Аналог того що Bitbon робить для бізнес-відносин і активів.</div></div></div></div>
+        </div>
+        <div class="box-i"><div class="tag">Мережевий ефект — головна суперсила платформ</div><p>Чим більше користувачів — тим цінніша платформа для кожного. 10 людей у телефонній мережі = 45 можливих дзвінків. 100 людей = 4950. Вартість росте <strong>квадратично</strong>, а не лінійно.</p></div>
+        <div class="quiz">
+          <div class="quiz-q">Що є головною активом платформи як Uber або Amazon?</div>
+          <div class="quiz-opts">
+            <button class="q-opt" onclick="quiz(this,false,'Технологія важлива, але її можна скопіювати. Головне — не код.')">Програмний код і технологія</button>
+            <button class="q-opt" onclick="quiz(this,true,'Правильно! Мережа учасників — найцінніший актив. Саме тому платформи важко обійти: вам потрібно відразу залучити всіх учасників, а не просто написати кращий код.')">Мережа учасників і мережевий ефект</button>
+            <button class="q-opt" onclick="quiz(this,false,'Брендинг важливий, але це наслідок мережевого ефекту, а не причина.')">Бренд і маркетинг</button>
+          </div>
+          <div class="quiz-fb"></div>
+        </div>`
+    },
+    {
+      title:"Дорожня карта децентралізованих платформ", xp:90,
+      videoUrl:"YOUR_YOUTUBE_URL_B2_11", videoDuration:"14–16 хв",
+      videoTitle:"Урок 11: Чому майбутнє за децентралізованими платформами і де тут Bitbon",
+      content:`
+        <div class="th2">Проблема централізованих платформ</div>
+        <p class="tp">Amazon може змінити умови для продавців завтра. Uber може підняти комісію. Instagram може заблокувати акаунт. <strong>Учасники не мають прав — лише умовні привілеї.</strong></p>
+        <div class="box-p"><p>💡 <strong>Децентралізована платформа</strong> — де правила зафіксовані в смарт-контракті і не можуть бути змінені однією стороною. Учасники мають реальні права, зафіксовані на блокчейні.</p></div>
+        <div class="pyramid">
+          <div class="pyr-item open" onclick="pyr(this)"><div class="pyr-hd"><span class="pyr-ico">🇺🇦</span><span class="pyr-t">Дія — державна платформа України</span><span class="pyr-arr">▾</span></div><div class="pyr-bd">Найуспішніший приклад держплатформи. 20+ млн. користувачів, 100+ послуг. Доводить що платформи можуть ефективно замінити бюрократію.</div></div>
+          <div class="pyr-item" onclick="pyr(this)"><div class="pyr-hd"><span class="pyr-ico">🇪🇺</span><span class="pyr-t">GAIA-X — Європа будує суверенну інфраструктуру</span><span class="pyr-arr">▾</span></div><div class="pyr-bd">Проект EU: незалежна від США і Китаю цифрова інфраструктура. Управління даними і суверенітет. Аналог того що Bitbon робить для бізнес-відносин.</div></div>
+          <div class="pyr-item" onclick="pyr(this)"><div class="pyr-hd"><span class="pyr-ico">🌐</span><span class="pyr-t">ICON Network — Корея</span><span class="pyr-arr">▾</span></div><div class="pyr-bd">Блокчейн-платформа що з'єднує різні мережі. Університети, лікарні, банки — обмінюються даними через єдиний протокол.</div></div>
+          <div class="pyr-item" onclick="pyr(this)"><div class="pyr-hd"><span class="pyr-ico">🔷</span><span class="pyr-t">Bitbon System — платформа нової економіки</span><span class="pyr-arr">▾</span></div><div class="pyr-bd">Tokenizація соціально-економічних відносин між бізнесом, державою і громадянами. Публічний контракт замість правил платформи. Учасники мають реальні права.</div></div>
+        </div>`
+    }
+  ]
+},
+// ═══ MODULE 5: ONE SPACE ═══
+{
+  id:5, emoji:"🚀", color:"#0ea5e9", title:"One Space — екосистема Bitbon",
+  desc:"Особистий кабінет · Assetbox · Сервіси · Як це все пов'язано",
+  totalXP:280, badgeId:'spacer',
+  steps:[
+    {
+      title:"One Space — ваш цифровий офіс", xp:90,
+      videoUrl:"YOUR_YOUTUBE_URL_B2_12", videoDuration:"15–20 хв",
+      videoTitle:"Урок 12: Показую One Space зсередини — повний огляд можливостей",
+      content:`
+        <div class="th2">One Space — єдина точка входу в екосистему</div>
+        <p class="tp">One Space — це <strong>програмна оболонка</strong> для роботи з усіма сервісами Bitbon System. Особистий кабінет, управління активами, Contributing, мережа контактів — все в одному місці.</p>
+        <div class="box-i"><div class="tag">Що таке Assetbox?</div><p>Assetbox — персональне "сховище" для ваших цифрових активів у системі Bitbon. Аналог банківського рахунку, але ви — єдиний власник і маєте повний контроль. Кожен учасник системи має унікальний Assetbox.</p></div>
+        <div class="pyramid">
+          <div class="pyr-item open" onclick="pyr(this)"><div class="pyr-hd"><span class="pyr-ico">💼</span><span class="pyr-t">Управління meta-активами</span><span class="pyr-arr">▾</span></div><div class="pyr-bd">Створення, облік і управління токенізованими правами на активи. Нерухомість, авторські права, результати роботи — все в цифровому форматі.</div></div>
+          <div class="pyr-item" onclick="pyr(this)"><div class="pyr-hd"><span class="pyr-ico">🤝</span><span class="pyr-t">Contributing — участь у проектах</span><span class="pyr-arr">▾</span></div><div class="pyr-bd">Огляд доступних проектів, аудитні звіти, умови публічного контракту, участь у Contributing. Прозоро і з юридичним захистом.</div></div>
+          <div class="pyr-item" onclick="pyr(this)"><div class="pyr-hd"><span class="pyr-ico">💱</span><span class="pyr-t">Обмін і трансфери</span><span class="pyr-arr">▾</span></div><div class="pyr-bd">Передача Bitbon між учасниками, обмін meta-активами, участь у ринку токенізованих прав. Все без традиційних посередників.</div></div>
+          <div class="pyr-item" onclick="pyr(this)"><div class="pyr-hd"><span class="pyr-ico">🌐</span><span class="pyr-t">Бізнес-соцмережа</span><span class="pyr-arr">▾</span></div><div class="pyr-bd">Мережа учасників і бізнесів всередині системи. Партнерства, пошук підрядників, колаборації — в рамках єдиної екосистеми.</div></div>
+        </div>
+        <ul class="task-list" id="tl-5-0">
+          <li class="task-item" onclick="task(this,'tl-5-0',0,20)"><span class="task-chk"></span><span class="task-txt">Зайти на bitbon.space і переглянути основні розділи</span></li>
+          <li class="task-item" onclick="task(this,'tl-5-0',1,20)"><span class="task-chk"></span><span class="task-txt">Знайти і прочитати опис сервісу One Space</span></li>
+          <li class="task-item" onclick="task(this,'tl-5-0',2,20)"><span class="task-chk"></span><span class="task-txt">Знайти розділ з активними Contributing-проектами</span></li>
+        </ul>`
+    },
+    {
+      title:"Реєстрація і перші кроки", xp:100,
+      videoUrl:"YOUR_YOUTUBE_URL_B2_13", videoDuration:"18–22 хв",
+      videoTitle:"Урок 13: Реєструємось в системі разом — покроково на живому екрані",
+      content:`
+        <div class="th2">Практичний старт в екосистемі Bitbon</div>
+        <p class="tp">У цьому уроці ми <strong>разом проходимо реєстрацію</strong> — ментор показує кожен крок на живому екрані. Дивіться відео і повторюйте.</p>
+        <div class="box-i"><div class="tag">Перед початком — перевірте</div><p>Ознайомтесь з Публічним контрактом на bitbon.space. Перевірте виписку з інвентарного паспорта. Починайте з суми яку готові не чіпати 3+ роки.</p></div>
+        <div class="hw">
+          <div class="hw-hd"><div class="hw-icon">🎯</div><div><div class="hw-title">Практичне завдання</div><div class="hw-sub">Виконайте паралельно з відео</div></div></div>
+          <div class="hw-task">Зареєструйтесь у системі Bitbon (bitbon.space) і <strong>опишіть свій перший досвід</strong>: що сподобалось, що незрозуміло, які питання виникли.</div>
+          <textarea class="hw-ta" id="hw-5-1" placeholder="Зареєструвався: так / ні (і чому)&#10;Що сподобалось: ...&#10;Що незрозуміло: ...&#10;Питання до ментора: ...&#10;Перші враження від системи: ..."></textarea>
+          <button class="hw-btn" onclick="saveHW(this,'5-1')">Зберегти ✓</button>
+        </div>`
+    }
+  ]
+},
+// ═══ MODULE 6: СИСТЕМА BITBON ГЛИБОКО ═══
+{
+  id:6, emoji:"🔷", color:"#1d4ed8", title:"Система Bitbon — повне занурення",
+  desc:"Протокол · Капіталізаційний фонд · Meta-активи · Дорожня карта",
+  totalXP:320, badgeId:'bitboner2',
+  steps:[
+    {
+      title:"Протокол Bitbon і забезпечення", xp:100,
+      videoUrl:"YOUR_YOUTUBE_URL_B2_14", videoDuration:"18–22 хв",
+      videoTitle:"Урок 14: Протокол Bitbon — як формується цінність і що таке інвентарний паспорт",
+      content:`
+        <div class="th2">Звідки береться цінність Bitbon?</div>
+        <p class="tp">На відміну від більшості криптовалют, Bitbon — <strong>похідний фінансовий інструмент</strong>. Його цінність похідна від реальних нематеріальних активів компанії Simcord, зафіксованих в інвентарному паспорті.</p>
+        <div class="formula"><div class="formula-main">Bitbon = похідна від активів Simcord</div><div class="formula-sub">Інвентарний паспорт → Публічний контракт → Bitbon</div></div>
+        <div class="pyramid">
+          <div class="pyr-item open" onclick="pyr(this)"><div class="pyr-hd"><span class="pyr-ico">📋</span><span class="pyr-t">Інвентарний паспорт — юридична основа</span><span class="pyr-arr">▾</span></div><div class="pyr-bd">Офіційний документ що підтверджує нематеріальні активи Simcord: програмне забезпечення, технології, інтелектуальна власність. <strong>Публічно доступний на сайті.</strong></div></div>
+          <div class="pyr-item" onclick="pyr(this)"><div class="pyr-hd"><span class="pyr-ico">📜</span><span class="pyr-t">Публічний контракт — правила системи</span><span class="pyr-arr">▾</span></div><div class="pyr-bd">Основоположний документ що визначає права і обов'язки всіх учасників. Оферта прийнята — ви учасник системи з реальними правами.</div></div>
+          <div class="pyr-item" onclick="pyr(this)"><div class="pyr-hd"><span class="pyr-ico">💰</span><span class="pyr-t">Капіталізаційний Фонд Bitbon</span><span class="pyr-arr">▾</span></div><div class="pyr-bd">Механізм підтримки стабільності Bitbon. Частина доходів системи спрямовується у фонд, що формує попит і підтримує цінність активу.</div></div>
+          <div class="pyr-item" onclick="pyr(this)"><div class="pyr-hd"><span class="pyr-ico">🗺️</span><span class="pyr-t">Дорожня карта децентралізації</span><span class="pyr-arr">▾</span></div><div class="pyr-bd">Поетапний план передачі управління системою від Simcord до учасників. Чим більше децентралізація — тим менша залежність від однієї компанії.</div></div>
+        </div>
+        <div class="quiz">
+          <div class="quiz-q">Що є забезпеченням Bitbon відповідно до Протоколу?</div>
+          <div class="quiz-opts">
+            <button class="q-opt" onclick="quiz(this,false,'Золото забезпечує фіатні валюти. Bitbon має інший тип забезпечення.')">Золотий резерв компанії</button>
+            <button class="q-opt" onclick="quiz(this,true,'Правильно! Нематеріальні активи Simcord (ПЗ, технології, IP) зафіксовані в інвентарному паспорті є забезпеченням — відповідно до Протоколу Bitbon.')">Нематеріальні активи Simcord згідно інвентарного паспорта</button>
+            <button class="q-opt" onclick="quiz(this,false,'Довіра учасників — важлива, але юридично задокументоване забезпечення є реальним активом.')">Довіра учасників мережі</button>
+          </div>
+          <div class="quiz-fb"></div>
+        </div>`
+    },
+    {
+      title:"Contributing — глибоке занурення", xp:110,
+      videoUrl:"YOUR_YOUTUBE_URL_B2_15", videoDuration:"20–25 хв",
+      videoTitle:"Урок 15: Contributing — повний цикл від вибору проекту до отримання Projectbon",
+      content:`
+        <div class="th2">Contributing — новий тип інвестування з аудитом</div>
+        <p class="tp">Contributing у Bitbon System — це <strong>не краудфандинг</strong>, де гроші йдуть без контролю. Кожен проект проходить обов'язковий аудит бізнес-моделі. Публічний контракт захищає права контриб'юторів.</p>
+        <div class="timeline">
+          <div class="tl-item" onclick="expandTL(this)">
+            <div class="tl-left"><div class="tl-year">Крок 1</div><div class="tl-dot-c"></div><div class="tl-line-c"></div></div>
+            <div class="tl-body"><div class="tl-title">Ініціатор подає проект</div><div class="tl-desc">Бізнес-план, команда, фінансова модель, прогнози. Публічний Projectbon-контракт з умовами для контриб'юторів.</div></div>
+          </div>
+          <div class="tl-item" onclick="expandTL(this)">
+            <div class="tl-left"><div class="tl-year">Крок 2</div><div class="tl-dot-c"></div><div class="tl-line-c"></div></div>
+            <div class="tl-body"><div class="tl-title">Аудит бізнес-моделі</div><div class="tl-desc">Незалежна перевірка: чи реалістична модель, які ризики, чи є правова основа. Тільки після схвалення — публікація.</div></div>
+          </div>
+          <div class="tl-item" onclick="expandTL(this)">
+            <div class="tl-left"><div class="tl-year">Крок 3</div><div class="tl-dot-c"></div><div class="tl-line-c"></div></div>
+            <div class="tl-body"><div class="tl-title">Contributing відкрито</div><div class="tl-desc">Учасники системи вносять Bitbon у проект. Отримують Projectbon — токен що підтверджує право на частку прибутку.</div></div>
+          </div>
+          <div class="tl-item" onclick="expandTL(this)">
+            <div class="tl-left"><div class="tl-year">Крок 4</div><div class="tl-dot-c"></div><div class="tl-line-c"></div></div>
+            <div class="tl-body"><div class="tl-title">Проект реалізується</div><div class="tl-desc">Ініціатор виконує умови публічного контракту. Прозвітність через систему. Доступ до звітів для всіх контриб'юторів.</div></div>
+          </div>
+          <div class="tl-item" onclick="expandTL(this)">
+            <div class="tl-left"><div class="tl-year">Крок 5</div><div class="tl-dot-c"></div></div>
+            <div class="tl-body"><div class="tl-title">Розподіл прибутку</div><div class="tl-desc">Прибуток розподіляється між власниками Projectbon пропорційно до частки. Автоматично, прозоро, відповідно до контракту.</div></div>
+          </div>
+        </div>
+        <div class="hw">
+          <div class="hw-hd"><div class="hw-icon">🔷</div><div><div class="hw-title">Фінальне завдання Блоку 2</div><div class="hw-sub">Ваша цифрова стратегія</div></div></div>
+          <div class="hw-task">Напишіть свою <strong>стратегію входу в екосистему Bitbon</strong>: яку суму готові інвестувати, який проект для Contributing вас цікавить і чому, які ризики бачите і як їх мінімізуєте.</div>
+          <textarea class="hw-ta" id="hw-6-1" style="min-height:140px" placeholder="МОЯ СТРАТЕГІЯ ВХОДУ В BITBON&#10;&#10;Сума для Contributing: ...&#10;Горизонт інвестування: ... років&#10;Проект що зацікавив: ...&#10;Чому саме він: ...&#10;Ризики: ...&#10;Як мінімізую ризики: ...&#10;Мої очікування: ..."></textarea>
+          <button class="hw-btn" onclick="saveHW(this,'6-1')">Зберегти стратегію ✓</button>
+        </div>`
+    }
+  ]
+},
+// ═══ MODULE 7: ПІДСУМОК І СТРАТЕГІЯ ═══
+{
+  id:7, emoji:"🏆", color:"#6d28d9", title:"Ваша цифрова стратегія",
+  desc:"Синтез всього · Місце в новій економіці · Наступні кроки",
+  totalXP:300, badgeId:'pioneer',
+  steps:[
+    {
+      title:"Синтез: нова економіка і ви", xp:100,
+      videoUrl:"YOUR_YOUTUBE_URL_B2_16", videoDuration:"15–18 хв",
+      videoTitle:"Урок 16: Ваше місце в цифровій економіці — стратегія на 5 років",
+      content:`
+        <div class="th2">Все що ви дізнались — в одній картині</div>
+        <p class="tp">Ви пройшли шлях від бартеру до блокчейну, від фіату до токенізації, від традиційних платформ до децентралізованих. <strong>Тепер — як це все використати у вашому житті.</strong></p>
+        <div class="compare-grid">
+          <div class="cmp-card">
+            <div class="cmp-ico">😐</div>
+            <div class="cmp-title">Звичайна людина</div>
+            <div class="cmp-rows">
+              <div class="cmp-row"><span class="ck">→</span>Тримає гроші у банку</div>
+              <div class="cmp-row"><span class="ck">→</span>Одне джерело доходу</div>
+              <div class="cmp-row"><span class="ck">→</span>Не розуміє токенізацію</div>
+              <div class="cmp-row"><span class="ck">→</span>Спостерігає зі сторони</div>
+            </div>
+          </div>
+          <div class="cmp-card highlight">
+            <div class="cmp-ico">🔷</div>
+            <div class="cmp-title">Учасник нової економіки</div>
+            <div class="cmp-rows">
+              <div class="cmp-row"><span class="ck">✅</span>Диверсифікований портфель</div>
+              <div class="cmp-row"><span class="ck">✅</span>Кілька джерел доходу</div>
+              <div class="cmp-row"><span class="ck">✅</span>Токенізовані активи</div>
+              <div class="cmp-row"><span class="ck">✅</span>Contributing у Bitbon</div>
+            </div>
+          </div>
+          <div class="cmp-card">
+            <div class="cmp-ico">🚀</div>
+            <div class="cmp-title">Піонер нової економіки</div>
+            <div class="cmp-rows">
+              <div class="cmp-row"><span class="ck">⭐</span>Власний бізнес у Web3</div>
+              <div class="cmp-row"><span class="ck">⭐</span>Активний у ком'юніті</div>
+              <div class="cmp-row"><span class="ck">⭐</span>Токенізує власні активи</div>
+              <div class="cmp-row"><span class="ck">⭐</span>Будує в екосистемі Bitbon</div>
+            </div>
+          </div>
+        </div>
+        <ul class="task-list" id="tl-7-0">
+          <li class="task-item" onclick="task(this,'tl-7-0',0,25)"><span class="task-chk"></span><span class="task-txt">Я розумію різницю між фіатом, криптою і токенізованим активом</span></li>
+          <li class="task-item" onclick="task(this,'tl-7-0',1,25)"><span class="task-chk"></span><span class="task-txt">Я знаю як працює блокчейн і смарт-контракти</span></li>
+          <li class="task-item" onclick="task(this,'tl-7-0',2,25)"><span class="task-chk"></span><span class="task-txt">Я розумію систему Bitbon і механіку Contributing</span></li>
+          <li class="task-item" onclick="task(this,'tl-7-0',3,25)"><span class="task-chk"></span><span class="task-txt">Я зареєструвався в системі і дослідив перший проект</span></li>
+          <li class="task-item" onclick="task(this,'tl-7-0',4,25)"><span class="task-chk"></span><span class="task-txt">У мене є стратегія входу в екосистему Bitbon</span></li>
+        </ul>`
+    },
+    {
+      title:"Наступні кроки — Блок 3", xp:130,
+      videoUrl:"YOUR_YOUTUBE_URL_B2_17", videoDuration:"12–15 хв",
+      videoTitle:"Урок 17: Вітаємо з завершенням Блоку 2 — що далі і як потрапити в ком'юніті",
+      content:`
+        <div class="th2">Блок 2 завершено — ви розумієте нову економіку</div>
+        <p class="tp">Ви пройшли 17 уроків, зрозуміли блокчейн, токенізацію, платформну економіку і систему Bitbon. Тепер — <strong>найцікавіше: як в ній заробляти і будувати бізнес.</strong></p>
+        <div class="box-p"><p>🚀 <strong>Блок 3 — Бізнес і підприємництво:</strong> Мислення підприємця нової економіки. Бізнес-моделі в Web3. Як побудувати перше джерело доходу в екосистемі Bitbon. Нетворкінг і партнерства. Ваш бізнес-план. <strong>Після завершення — запрошення в закрите ком'юніті підприємців Bitbon.</strong></p></div>
+        <div class="hw">
+          <div class="hw-hd"><div class="hw-icon">🏆</div><div><div class="hw-title">Ваше фінальне рефлексія Блоку 2</div><div class="hw-sub">Що змінилось у вашому розумінні?</div></div></div>
+          <div class="hw-task">Напишіть: <strong>яке відкриття з Блоку 2 вразило вас найбільше?</strong> Що ви зробите інакше у своїх фінансових рішеннях після цього курсу?</div>
+          <textarea class="hw-ta" id="hw-7-1" placeholder="Найбільше відкриття Блоку 2: ...&#10;&#10;Що змінилось у моєму розумінні: ...&#10;&#10;Конкретна дія яку зроблю цього тижня: ...&#10;&#10;Питання з яким йду в Блок 3: ..."></textarea>
+          <button class="hw-btn" onclick="saveHW(this,'7-1')">Зберегти і завершити Блок 2 ✓</button>
+        </div>`
+    }
+  ]
+}
+];
+
+// ─── RENDER ───
+function renderModules(){
+  const c=document.getElementById('modules-container');c.innerHTML='';
+  MODULES.forEach((m,mi)=>{
+    const done=S.completedModules.includes(mi);
+    const doneSet=new Set(S.completedSteps[mi]||[]);
+    const stDone=doneSet.size,stTotal=m.steps.length;
+    const pct=stTotal>0?Math.round(stDone/stTotal*100):0;
+    const isOpen=S.activeModule===mi;
+    const locked=mi>0&&!S.completedModules.includes(mi-1)&&stDone===0;
+    const el=document.createElement('div');
+    el.className='mod-block'+(isOpen?' open':'')+(done?' done':'');
+    el.id='mb-'+mi;
+    el.innerHTML=`
+      <div class="mod-hdr" onclick="toggleMod(${mi})">
+        <div class="mod-ico" style="background:${m.color}22">${m.emoji}${done?'<span class="done-mark">✓</span>':''}</div>
+        <div class="mod-info">
+          <div class="mod-num">Модуль ${String(mi+1).padStart(2,'0')}</div>
+          <div class="mod-name">${m.title}</div>
+          <div class="mod-desc">${m.desc}</div>
+        </div>
+        <div class="mod-right">
+          <span class="mod-xp-tag">+${m.totalXP} XP</span>
+          <div class="mod-prog"><div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div><span class="prog-txt">${stDone}/${stTotal}</span></div>
+        </div>
+        <span class="mod-chev">▾</span>
+      </div>
+      <div class="lesson-body">${locked?`<div style="padding:26px;text-align:center;color:var(--muted)"><div style="font-size:30px;margin-bottom:9px">🔒</div><div style="font-size:13px">Завершіть попередній модуль</div></div>`:renderLesson(m,mi,doneSet)}</div>`;
+    c.appendChild(el);
+  });
+  renderRoadmap();
+  restoreTasks();
+}
+
+function renderLesson(m,mi,doneSet){
+  const cur=S.activeSteps[mi]!==undefined?S.activeSteps[mi]:0;
+  const tabs=m.steps.map((s,si)=>`<button class="ltab${cur===si?' active':''}${doneSet.has(si)?' done':''}" onclick="goStep(${mi},${si})">${s.title}</button>`).join('');
+  const panels=m.steps.map((s,si)=>`
+    <div class="step-panel${cur===si?' active':''}" id="sp-${mi}-${si}">
+      ${renderVid(s)}
+      <div>${s.content}</div>
+      <div class="step-nav">
+        <button class="btn-prev" onclick="prevStep(${mi})" ${cur===0?'disabled':''}>← Назад</button>
+        <div class="s-dots">${m.steps.map((_,i)=>`<div class="s-dot${i===cur?' active':''}${doneSet.has(i)?' done':''}"></div>`).join('')}</div>
+        <button class="btn-next${cur===m.steps.length-1?' fin':''}" onclick="nextStep(${mi})">${cur===m.steps.length-1?'Завершити модуль ✓':'Далі →'}</button>
+      </div>
+    </div>`).join('');
+  return `<div class="ltabs">${tabs}</div><div class="lesson-content">${panels}</div>`;
+}
+
+function renderVid(s){
+  const has=s.videoUrl&&!s.videoUrl.startsWith('YOUR_');
+  const emb=u=>{const m=u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);return m?`https://www.youtube.com/embed/${m[1]}`:u;};
+  return `<div class="vid-block"><div class="vid-lbl">${s.videoTitle}</div><div class="vid-frame">${has?`<iframe src="${emb(s.videoUrl)}" allowfullscreen></iframe>`:`<div class="vid-ph"><div class="vid-ph-icon">▶</div><div class="vid-ph-txt">Відео буде додано після зйомки</div><div class="vid-ph-url">${s.videoUrl}</div></div>`}</div><div class="vid-dur">⏱ ${s.videoDuration}</div></div>`;
+}
+
+// ─── NAV ───
+function toggleMod(mi){S.activeModule=S.activeModule===mi?-1:mi;if(S.activeSteps[mi]===undefined)S.activeSteps[mi]=0;saveState();renderModules();if(S.activeModule===mi)setTimeout(()=>document.getElementById('mb-'+mi)?.scrollIntoView({behavior:'smooth',block:'start'}),80);}
+function goStep(mi,si){S.activeSteps[mi]=si;saveState();renderModules();}
+function prevStep(mi){const c=S.activeSteps[mi]||0;if(c>0){S.activeSteps[mi]=c-1;saveState();renderModules();}}
+function nextStep(mi){
+  const m=MODULES[mi];const cur=S.activeSteps[mi]||0;
+  if(!S.completedSteps[mi])S.completedSteps[mi]=[];
+  if(!S.completedSteps[mi].includes(cur)){S.completedSteps[mi].push(cur);addXP(m.steps[cur].xp,'крок завершено!');}
+  if(cur<m.steps.length-1){S.activeSteps[mi]=cur+1;saveState();renderModules();}
+  else{
+    if(!S.completedModules.includes(mi)){S.completedModules.push(mi);addXP(50,`Модуль "${m.title}" завершено! 🎉`);earnBadge(m.badgeId);}
+    S.activeModule=-1;saveState();renderModules();updateXPUI();
+    if(S.completedModules.length===MODULES.length)setTimeout(()=>{document.getElementById('block3-teaser').classList.add('show');document.getElementById('block3-teaser').scrollIntoView({behavior:'smooth'});},700);
+  }
+}
+
+// ─── HELPERS ───
+function pyr(el){const o=el.classList.contains('open');el.closest('.pyramid').querySelectorAll('.pyr-item').forEach(i=>i.classList.remove('open'));if(!o)el.classList.add('open');}
+function expandTL(el){el.classList.toggle('open');}
+function task(el,lid,idx,xp){if(el.classList.contains('done'))return;el.classList.add('done');el.querySelector('.task-chk').textContent='✓';if(!S.hwAnswers['task_'+lid])S.hwAnswers['task_'+lid]=[];if(!S.hwAnswers['task_'+lid].includes(idx)){S.hwAnswers['task_'+lid].push(idx);addXP(xp,'завдання виконано');saveState();}}
+function quiz(btn,correct,msg){const opts=btn.closest('.quiz').querySelectorAll('.q-opt');opts.forEach(o=>o.disabled=true);btn.classList.add(correct?'correct':'wrong');const fb=btn.closest('.quiz').querySelector('.quiz-fb');if(fb){fb.className='quiz-fb '+(correct?'ok':'err');fb.textContent=msg;}if(correct)addXP(15,'правильна відповідь!');}
+function scen(id,btn,good,msg){const wrap=document.getElementById(id);if(!wrap)return;wrap.querySelectorAll('.sc-opt').forEach(o=>o.disabled=true);btn.classList.add(good?'good':'bad');const res=document.getElementById(id+'-res');if(res){res.className='sc-res show '+(good?'ok':'err');res.textContent=msg;}if(good)addXP(20,'вірне рішення!');}
+function saveHW(btn,key){const ta=document.getElementById('hw-'+key);if(ta&&ta.value.trim().length>10){S.hwAnswers[key]=ta.value.trim();saveState();btn.textContent='✓ Збережено!';btn.disabled=true;btn.style.background='var(--green)';addXP(30,'домашнє завдання здано!');}else{btn.style.background='var(--red)';btn.textContent='Напишіть детальніше...';setTimeout(()=>{btn.style.background='';btn.textContent='Зберегти ✓';},2000);}}
+function restoreTasks(){Object.keys(S.hwAnswers).forEach(key=>{if(key.startsWith('task_')){const lid=key.replace('task_','');const idxs=S.hwAnswers[key];const list=document.getElementById(lid);if(!list)return;list.querySelectorAll('.task-item').forEach((item,i)=>{if(idxs.includes(i)){item.classList.add('done');item.querySelector('.task-chk').textContent='✓';}});}else{const ta=document.getElementById('hw-'+key);if(ta&&S.hwAnswers[key])ta.value=S.hwAnswers[key];}});}
+
+// ─── BLOCKCHAIN DEMO ───
+let bcBlocks=[{num:1,data:'Genesis Block',prev:'0000000000',hash:'a3f8d2e1b7c9'}];
+const hashFn=s=>{let h=0;for(let i=0;i<s.length;i++){h=(Math.imul(31,h)+s.charCodeAt(i))|0;}return Math.abs(h).toString(16).padStart(8,'0').repeat(2).slice(0,12);}
+const txs=['Аліса → Боб: 500 BTB','Боб → Марія: 200 BTB','Simcord → Contributing: 10000 BTB','Іван → Assetbox: 1000 BTB','Token Transfer: #A7F2'];
+function renderChain(){
+  const c=document.getElementById('bc-chain');
+  c.innerHTML=bcBlocks.map((b,i)=>`
+    <div class="rm-step">
+      <div class="bc-block" style="border-color:${b.tampered?'var(--red)':'var(--border2)'}">
+        <div class="bc-block-num">Блок #${b.num}</div>
+        <div class="bc-block-hash" title="Попередній хеш">prev: ${b.prev.slice(0,8)}...</div>
+        <div class="bc-block-data">${b.data}</div>
+        <div class="bc-block-hash" title="Хеш цього блоку" style="color:var(--teal)">hash: ${b.hash}...</div>
+      </div>
+      ${i<bcBlocks.length-1?'<div class="bc-arrow">→</div>':''}
+    </div>`).join('');
+}
+function addBlock(){
+  const tx=txs[Math.floor(Math.random()*txs.length)];
+  const prev=bcBlocks[bcBlocks.length-1].hash;
+  const h=hashFn(tx+prev+Date.now());
+  bcBlocks.push({num:bcBlocks.length+1,data:tx,prev,hash:h});
+  renderChain();
+  document.getElementById('bc-explain').textContent=`✅ Новий блок #${bcBlocks.length} додано. Його хеш залежить від хешу попереднього блоку — тому ланцюг неможливо підробити непомітно.`;
+  addXP(5,'дослідили блокчейн');
+}
+function tryHack(){
+  if(bcBlocks.length<3){document.getElementById('bc-explain').textContent='Спочатку додайте кілька транзакцій!';return;}
+  bcBlocks[1].data='ПІДРОБЛЕНО!';bcBlocks[1].tampered=true;
+  renderChain();
+  document.getElementById('bc-explain').innerHTML='🚨 <strong>Спроба підробки виявлена!</strong> Хеш блоку #2 вже не відповідає тому що записано в блоці #3. В реальній мережі — всі вузли відхилять цю версію. Підробка неможлива.';
+}
+function resetChain(){bcBlocks=[{num:1,data:'Genesis Block',prev:'0000000000',hash:'a3f8d2e1b7c9'}];renderChain();document.getElementById('bc-explain').textContent='Ланцюг скинуто. Натисніть "Додати транзакцію" щоб почати знову.';}
+
+// ─── TOKEN DEMO ───
+let ownedTokens=new Set();
+function renderTokens(){
+  const g=document.getElementById('token-grid');if(!g)return;
+  g.innerHTML=Array.from({length:10},(_,i)=>`<div class="token-piece ${ownedTokens.has(i)?'owned':''}" onclick="buyToken(${i})"><div class="token-piece-val">5 000 000<br>грн</div><div class="token-piece-lbl">Частка ${i+1}</div></div>`).join('');
+  const cnt=document.getElementById('token-count');if(cnt)cnt.textContent=ownedTokens.size;
+}
+function buyToken(i){if(ownedTokens.has(i)){ownedTokens.delete(i);}else{ownedTokens.add(i);addXP(5,'купили токен!');}renderTokens();}
+
+// ─── INIT ───
+const observer=new MutationObserver(()=>restoreTasks());
+observer.observe(document.getElementById('modules-container'),{childList:true,subtree:true});
+renderBadges();renderModules();updateXPUI();
+setTimeout(()=>{renderChain();renderTokens();},300);
+</script>
+</body>
+</html>

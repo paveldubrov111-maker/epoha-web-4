@@ -1,0 +1,21 @@
+{
+  "name": "EPOHA WEB4 — Персональний Фінансовий Хаб",
+  "short_name": "Epoha",
+  "description": "Сучасна екосистема для управління капіталом, бюджетування та аналітики інвестицій.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

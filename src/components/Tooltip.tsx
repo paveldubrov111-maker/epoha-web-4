@@ -51,7 +51,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
       {children}
       {isVisible && (
         <div 
-          className={`absolute z-[100] px-3 py-2 text-xs font-medium text-white bg-zinc-900/90 dark:bg-zinc-800/95 backdrop-blur-md rounded-xl border border-white/10 shadow-xl whitespace-nowrap pointer-events-auto ${positionClasses[position]}`}
+          className={`absolute z-[var(--z-tooltip)] px-3 py-2 text-xs font-medium text-white bg-zinc-900/90 dark:bg-zinc-800/95 backdrop-blur-md rounded-xl border border-white/10 shadow-xl whitespace-nowrap pointer-events-auto ${positionClasses[position]}`}
           onMouseEnter={show}
           onMouseLeave={hide}
           role="tooltip"

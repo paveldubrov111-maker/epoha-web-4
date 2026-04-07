@@ -1,28 +1,39 @@
 import { Currency } from '../types';
 import { CFG } from '../constants/config';
 
-export function fmt(v: number | undefined | null, c: Currency) {
+export function fmt(v: number | undefined | null, c: Currency, maxDecimals: number = 0, compact: boolean = false) {
   if (v === undefined || v === null || isNaN(v)) return '0';
   const cfg = CFG[c];
   if (!cfg) return v.toLocaleString();
-  const s = v.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  
+  const options: Intl.NumberFormatOptions = { 
+    minimumFractionDigits: 0, 
+    maximumFractionDigits: maxDecimals 
+  };
+  
+  if (compact) {
+    options.notation = 'compact';
+    options.compactDisplay = 'short';
+  }
+
+  const s = v.toLocaleString(undefined, options);
   return cfg.suffix ? `${s} ${cfg.sym}` : `${cfg.sym}${s}`;
 }
 
 export function fmtUsd(v: number | undefined | null) {
   if (v === undefined || v === null || isNaN(v)) return '$0';
-  return `$${v.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  return `$${v.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 4 })}`;
 }
 
-export function formatGlobal(val: number | undefined | null, cur: Currency, rates: Record<string, number>, sourceCur: Currency = 'USD') {
-  if (val === 0 || val === undefined || val === null || isNaN(val)) return fmt(0, cur);
+export function formatGlobal(val: number | undefined | null, cur: Currency, rates: Record<string, number>, sourceCur: Currency = 'USD', maxDecimals: number = 0, compact: boolean = false) {
+  if (val === 0 || val === undefined || val === null || isNaN(val)) return fmt(0, cur, maxDecimals, compact);
   
   // Якщо вхідна валюта вже збігається з цільовою, просто форматуємо
-  if (sourceCur === cur) return fmt(val, cur);
+  if (sourceCur === cur) return fmt(val, cur, maxDecimals, compact);
 
   // Convert from source currency to USD first
   const usdVal = sourceCur === 'USD' ? val : val / (rates[sourceCur] || 1);
   // Then convert from USD to target currency
   const targetVal = usdVal * (rates[cur] || 1);
-  return fmt(targetVal, cur);
+  return fmt(targetVal, cur, maxDecimals, compact);
 }

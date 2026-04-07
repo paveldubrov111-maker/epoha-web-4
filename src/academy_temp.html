@@ -1,0 +1,2555 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitbon Academy — Фінансова стратегія на все життя</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
+    <style>
+        /* ===== RESET & BASE ===== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --bg: #0a0b0f;
+            --bg2: #111318;
+            --bg3: #181b22;
+            --card: #1a1d26;
+            --card2: #1f2330;
+            --border: #2a2d3a;
+            --border2: #363a4a;
+            --text: #f0f1f5;
+            --muted: #8b8fa8;
+            --muted2: #5a5e72;
+            --accent: #3b82f6;
+            --accent2: #1d4ed8;
+            --gold: #f59e0b;
+            --gold2: #fbbf24;
+            --green: #10b981;
+            --green2: #059669;
+            --purple: #8b5cf6;
+            --red: #ef4444;
+            --r-sm: 8px;
+            --r-md: 12px;
+            --r-lg: 16px;
+            --r-xl: 24px;
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 15px;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* ===== LAYOUT ===== */
+        .course-wrap {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 20px 80px
+        }
+
+        /* ===== HEADER ===== */
+        .course-header {
+            padding: 40px 0 32px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 32px;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            flex-wrap: gap
+        }
+
+        .logo-mark {
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent), var(--purple));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 800;
+            color: #fff
+        }
+
+        .logo-text {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -.02em
+        }
+
+        .logo-text span {
+            color: var(--accent)
+        }
+
+        .header-xp {
+            display: flex;
+            align-items: center;
+            gap: 12px
+        }
+
+        .xp-pill {
+            background: var(--card2);
+            border: 1px solid var(--border2);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gold2);
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .streak-pill {
+            background: var(--card2);
+            border: 1px solid var(--border2);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 5px
+        }
+
+        .course-title-block {
+            margin-bottom: 20px
+        }
+
+        .course-eyebrow {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            margin-bottom: 10px
+        }
+
+        .course-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(26px, 4vw, 38px);
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #fff 0%, #8b9fc8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent
+        }
+
+        .course-subtitle {
+            font-size: 15px;
+            color: var(--muted);
+            max-width: 560px;
+            line-height: 1.7
+        }
+
+        /* XP BAR */
+        .xp-section {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            padding: 16px 20px
+        }
+
+        .xp-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px
+        }
+
+        .xp-level {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text)
+        }
+
+        .xp-count {
+            font-size: 13px;
+            color: var(--muted)
+        }
+
+        .xp-track {
+            height: 8px;
+            background: var(--bg3);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 6px
+        }
+
+        .xp-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--accent), var(--purple));
+            transition: width .6s cubic-bezier(.4, 0, .2, 1)
+        }
+
+        .xp-milestones {
+            display: flex;
+            justify-content: space-between
+        }
+
+        .xp-milestone {
+            font-size: 11px;
+            color: var(--muted2)
+        }
+
+        /* ===== STATS ROW ===== */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 28px
+        }
+
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--r-md);
+            padding: 14px 16px;
+            text-align: center
+        }
+
+        .stat-val {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 3px
+        }
+
+        .stat-lbl {
+            font-size: 11px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .05em
+        }
+
+        .stat-card.s-accent .stat-val {
+            color: var(--accent)
+        }
+
+        .stat-card.s-gold .stat-val {
+            color: var(--gold2)
+        }
+
+        .stat-card.s-green .stat-val {
+            color: var(--green)
+        }
+
+        .stat-card.s-purple .stat-val {
+            color: var(--purple)
+        }
+
+        /* ===== MODULE LIST ===== */
+        .modules-section {
+            margin-bottom: 12px
+        }
+
+        .section-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border)
+        }
+
+        .module-block {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--r-xl);
+            overflow: hidden;
+            margin-bottom: 10px;
+            transition: border-color .2s
+        }
+
+        .module-block.is-open {
+            border-color: var(--border2)
+        }
+
+        .module-block.is-done {
+            border-color: rgba(16, 185, 129, .3)
+        }
+
+        .module-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 20px 22px;
+            cursor: pointer;
+            user-select: none;
+            transition: background .15s
+        }
+
+        .module-header:hover {
+            background: rgba(255, 255, 255, .02)
+        }
+
+        .mod-ico {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+            position: relative
+        }
+
+        .mod-done-badge {
+            position: absolute;
+            bottom: -3px;
+            right: -3px;
+            width: 16px;
+            height: 16px;
+            background: var(--green);
+            border-radius: 50%;
+            border: 2px solid var(--card);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px
+        }
+
+        .mod-info {
+            flex: 1;
+            min-width: 0
+        }
+
+        .mod-num {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--muted);
+            margin-bottom: 3px;
+            text-transform: uppercase;
+            letter-spacing: .05em
+        }
+
+        .mod-name {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .mod-desc {
+            font-size: 12px;
+            color: var(--muted)
+        }
+
+        .mod-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+            flex-shrink: 0
+        }
+
+        .mod-xp-badge {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--gold2);
+            background: rgba(245, 158, 11, .1);
+            border: 1px solid rgba(245, 158, 11, .2);
+            padding: 3px 9px;
+            border-radius: 10px
+        }
+
+        .mod-progress {
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .mod-prog-bar {
+            width: 64px;
+            height: 4px;
+            background: var(--bg3);
+            border-radius: 2px;
+            overflow: hidden
+        }
+
+        .mod-prog-fill {
+            height: 100%;
+            background: var(--green);
+            border-radius: 2px;
+            transition: width .4s
+        }
+
+        .mod-prog-txt {
+            font-size: 11px;
+            color: var(--muted);
+            min-width: 30px;
+            text-align: right
+        }
+
+        .mod-chevron {
+            font-size: 14px;
+            color: var(--muted2);
+            transition: transform .3s;
+            flex-shrink: 0
+        }
+
+        .module-block.is-open .mod-chevron {
+            transform: rotate(180deg)
+        }
+
+        /* ===== LESSON BODY ===== */
+        .lesson-body {
+            display: none;
+            border-top: 1px solid var(--border)
+        }
+
+        .module-block.is-open .lesson-body {
+            display: block
+        }
+
+        /* LESSON TABS */
+        .lesson-tabs {
+            display: flex;
+            overflow-x: auto;
+            scrollbar-width: none;
+            border-bottom: 1px solid var(--border);
+            padding: 0 22px;
+            gap: 2px
+        }
+
+        .lesson-tabs::-webkit-scrollbar {
+            display: none
+        }
+
+        .ltab {
+            padding: 13px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all .15s;
+            background: none;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            font-family: 'Manrope', sans-serif
+        }
+
+        .ltab:hover {
+            color: var(--text)
+        }
+
+        .ltab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent)
+        }
+
+        .ltab.done {
+            color: var(--green)
+        }
+
+        /* LESSON CONTENT */
+        .lesson-content {
+            padding: 28px 26px
+        }
+
+        .step-panel {
+            display: none
+        }
+
+        .step-panel.active {
+            display: block
+        }
+
+        /* VIDEO BLOCK */
+        .video-block {
+            margin-bottom: 28px
+        }
+
+        .video-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .video-label::before {
+            content: '▶';
+            width: 20px;
+            height: 20px;
+            background: var(--accent);
+            border-radius: 5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            flex-shrink: 0
+        }
+
+        .video-frame {
+            position: relative;
+            padding-bottom: 56.25%;
+            background: var(--bg3);
+            border-radius: var(--r-lg);
+            overflow: hidden;
+            border: 1px solid var(--border)
+        }
+
+        .video-frame iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none
+        }
+
+        .video-placeholder {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: var(--bg3)
+        }
+
+        .vp-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(59, 130, 246, .15);
+            border: 1px solid rgba(59, 130, 246, .3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px
+        }
+
+        .vp-text {
+            font-size: 14px;
+            color: var(--muted);
+            text-align: center;
+            max-width: 280px;
+            line-height: 1.5
+        }
+
+        .vp-url {
+            font-size: 12px;
+            color: var(--accent);
+            font-family: monospace;
+            margin-top: 4px;
+            word-break: break-all;
+            text-align: center;
+            max-width: 320px
+        }
+
+        .video-duration {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px
+        }
+
+        /* THEORY BLOCK */
+        .theory-block {
+            margin-bottom: 24px
+        }
+
+        .theory-h2 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text)
+        }
+
+        .theory-h3 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            margin-top: 18px;
+            color: var(--text)
+        }
+
+        .theory-p {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.8;
+            margin-bottom: 12px
+        }
+
+        .theory-p strong {
+            color: var(--text);
+            font-weight: 600
+        }
+
+        .theory-p em {
+            color: var(--gold2);
+            font-style: normal
+        }
+
+        /* INSIGHT BOXES */
+        .insight {
+            border-left: 3px solid var(--accent);
+            background: rgba(59, 130, 246, .06);
+            border-radius: 0 var(--r-md) var(--r-md) 0;
+            padding: 14px 16px;
+            margin: 14px 0
+        }
+
+        .insight-tag {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 5px
+        }
+
+        .insight p {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.7
+        }
+
+        .insight p strong {
+            color: var(--text)
+        }
+
+        .warn {
+            border-left: 3px solid var(--gold);
+            background: rgba(245, 158, 11, .06);
+            border-radius: 0 var(--r-md) var(--r-md) 0;
+            padding: 14px 16px;
+            margin: 14px 0
+        }
+
+        .warn p {
+            font-size: 13px;
+            color: rgba(251, 191, 36, .85);
+            line-height: 1.7
+        }
+
+        .danger {
+            border-left: 3px solid var(--red);
+            background: rgba(239, 68, 68, .06);
+            border-radius: 0 var(--r-md) var(--r-md) 0;
+            padding: 14px 16px;
+            margin: 14px 0
+        }
+
+        .danger p {
+            font-size: 13px;
+            color: rgba(239, 68, 68, .85);
+            line-height: 1.7
+        }
+
+        /* FORMULA */
+        .formula {
+            background: var(--bg3);
+            border: 1px solid var(--border2);
+            border-radius: var(--r-md);
+            padding: 18px;
+            margin: 16px 0;
+            text-align: center
+        }
+
+        .formula-main {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 6px;
+            font-family: 'Playfair Display', serif
+        }
+
+        .formula-sub {
+            font-size: 12px;
+            color: var(--muted)
+        }
+
+        /* FLIP CARDS */
+        .flipgrid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 16px 0
+        }
+
+        .flipcard {
+            perspective: 800px;
+            height: 130px;
+            cursor: pointer
+        }
+
+        .flipcard-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform .5s cubic-bezier(.4, 0, .2, 1)
+        }
+
+        .flipcard.flipped .flipcard-inner {
+            transform: rotateY(180deg)
+        }
+
+        .flipcard-front,
+        .flipcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: var(--r-md);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center
+        }
+
+        .flipcard-front {
+            background: var(--card2);
+            border: 1px solid var(--border2)
+        }
+
+        .flipcard-back {
+            background: var(--bg3);
+            border: 1px solid var(--accent);
+            transform: rotateY(180deg)
+        }
+
+        .flip-icon {
+            font-size: 24px;
+            margin-bottom: 8px
+        }
+
+        .flip-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text)
+        }
+
+        .flip-sub {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 4px
+        }
+
+        .flip-answer {
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.6
+        }
+
+        .flip-hint {
+            font-size: 11px;
+            color: var(--muted2);
+            text-align: center;
+            margin-bottom: 8px
+        }
+
+        /* SCENARIO */
+        .scenario-box {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            padding: 20px;
+            margin: 16px 0
+        }
+
+        .scenario-story {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.7;
+            margin-bottom: 16px;
+            padding: 14px;
+            background: rgba(255, 255, 255, .03);
+            border-radius: var(--r-md);
+            border: 1px solid var(--border)
+        }
+
+        .scenario-story strong {
+            color: var(--text)
+        }
+
+        .scenario-q {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 12px
+        }
+
+        .sc-opts {
+            display: flex;
+            flex-direction: column;
+            gap: 8px
+        }
+
+        .sc-opt {
+            padding: 12px 16px;
+            font-size: 13px;
+            border: 1px solid var(--border2);
+            border-radius: var(--r-md);
+            cursor: pointer;
+            background: transparent;
+            text-align: left;
+            font-family: 'Manrope', sans-serif;
+            color: var(--muted);
+            transition: all .15s;
+            line-height: 1.5
+        }
+
+        .sc-opt:hover:not(:disabled) {
+            border-color: var(--border2);
+            background: rgba(255, 255, 255, .04);
+            color: var(--text)
+        }
+
+        .sc-opt.good {
+            background: rgba(16, 185, 129, .1);
+            border-color: rgba(16, 185, 129, .4);
+            color: var(--green)
+        }
+
+        .sc-opt.bad {
+            background: rgba(239, 68, 68, .1);
+            border-color: rgba(239, 68, 68, .3);
+            color: var(--red)
+        }
+
+        .sc-result {
+            margin-top: 12px;
+            padding: 12px 16px;
+            border-radius: var(--r-md);
+            font-size: 13px;
+            line-height: 1.6;
+            display: none
+        }
+
+        .sc-result.show {
+            display: block
+        }
+
+        .sc-result.ok {
+            background: rgba(16, 185, 129, .1);
+            color: var(--green);
+            border: 1px solid rgba(16, 185, 129, .2)
+        }
+
+        .sc-result.err {
+            background: rgba(239, 68, 68, .1);
+            color: var(--red);
+            border: 1px solid rgba(239, 68, 68, .2)
+        }
+
+        /* QUIZ */
+        .quiz-block {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            padding: 20px;
+            margin: 16px 0
+        }
+
+        .quiz-q {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 14px;
+            line-height: 1.5
+        }
+
+        .quiz-opts {
+            display: flex;
+            flex-direction: column;
+            gap: 8px
+        }
+
+        .q-opt {
+            padding: 12px 16px;
+            font-size: 13px;
+            border: 1px solid var(--border2);
+            border-radius: var(--r-md);
+            cursor: pointer;
+            background: transparent;
+            text-align: left;
+            font-family: 'Manrope', sans-serif;
+            color: var(--muted);
+            transition: all .15s;
+            line-height: 1.5
+        }
+
+        .q-opt:hover:not(:disabled) {
+            background: rgba(255, 255, 255, .04);
+            border-color: var(--border2);
+            color: var(--text)
+        }
+
+        .q-opt.correct {
+            background: rgba(16, 185, 129, .1);
+            border-color: rgba(16, 185, 129, .4);
+            color: var(--green)
+        }
+
+        .q-opt.wrong {
+            background: rgba(239, 68, 68, .1);
+            border-color: rgba(239, 68, 68, .3);
+            color: var(--red)
+        }
+
+        .quiz-fb {
+            margin-top: 10px;
+            padding: 12px 14px;
+            border-radius: var(--r-md);
+            font-size: 13px;
+            display: none;
+            line-height: 1.6
+        }
+
+        .quiz-fb.ok {
+            background: rgba(16, 185, 129, .1);
+            color: var(--green);
+            display: block
+        }
+
+        .quiz-fb.err {
+            background: rgba(239, 68, 68, .1);
+            color: var(--red);
+            display: block
+        }
+
+        /* CHECKLIST */
+        .task-list {
+            list-style: none;
+            padding: 0;
+            margin: 14px 0
+        }
+
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 11px 0;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: opacity .15s
+        }
+
+        .task-item:last-child {
+            border-bottom: none
+        }
+
+        .task-item:hover {
+            opacity: .8
+        }
+
+        .task-check {
+            width: 20px;
+            height: 20px;
+            border: 1.5px solid var(--border2);
+            border-radius: 6px;
+            flex-shrink: 0;
+            margin-top: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .2s
+        }
+
+        .task-item.done .task-check {
+            background: var(--green);
+            border-color: var(--green);
+            color: #fff;
+            font-size: 11px
+        }
+
+        .task-text {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.5
+        }
+
+        .task-item.done .task-text {
+            color: var(--muted2);
+            text-decoration: line-through
+        }
+
+        /* CALCULATOR */
+        .calc-box {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            padding: 20px;
+            margin: 16px 0
+        }
+
+        .calc-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .calc-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px
+        }
+
+        .calc-lbl {
+            font-size: 12px;
+            color: var(--muted);
+            min-width: 180px;
+            flex-shrink: 0
+        }
+
+        .calc-row input[type=range] {
+            flex: 1;
+            accent-color: var(--accent)
+        }
+
+        .calc-num {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            min-width: 90px;
+            text-align: right
+        }
+
+        .calc-outputs {
+            display: grid;
+            gap: 8px;
+            margin-top: 14px
+        }
+
+        .calc-outputs.c2 {
+            grid-template-columns: 1fr 1fr
+        }
+
+        .calc-outputs.c3 {
+            grid-template-columns: 1fr 1fr 1fr
+        }
+
+        .calc-out {
+            background: rgba(255, 255, 255, .03);
+            border: 1px solid var(--border);
+            border-radius: var(--r-md);
+            padding: 12px;
+            text-align: center
+        }
+
+        .calc-out .co-val {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 3px
+        }
+
+        .calc-out .co-lbl {
+            font-size: 11px;
+            color: var(--muted)
+        }
+
+        .calc-out.accent .co-val {
+            color: var(--accent)
+        }
+
+        .calc-out.gold .co-val {
+            color: var(--gold2)
+        }
+
+        .calc-out.green .co-val {
+            color: var(--green)
+        }
+
+        .calc-out.purple .co-val {
+            color: var(--purple)
+        }
+
+        /* PYRAMID ACCORDION */
+        .pyramid {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin: 14px 0
+        }
+
+        .pyr-item {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: var(--r-md);
+            overflow: hidden;
+            cursor: pointer;
+            transition: border-color .2s
+        }
+
+        .pyr-item.open {
+            border-color: var(--border2)
+        }
+
+        .pyr-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 13px 16px
+        }
+
+        .pyr-head-icon {
+            font-size: 18px;
+            flex-shrink: 0
+        }
+
+        .pyr-head-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            flex: 1
+        }
+
+        .pyr-head-arrow {
+            font-size: 12px;
+            color: var(--muted2);
+            transition: transform .25s
+        }
+
+        .pyr-item.open .pyr-head-arrow {
+            transform: rotate(180deg)
+        }
+
+        .pyr-body {
+            display: none;
+            padding: 0 16px 14px 44px;
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.7
+        }
+
+        .pyr-item.open .pyr-body {
+            display: block
+        }
+
+        .pyr-body strong {
+            color: var(--text)
+        }
+
+        /* HOME TASK */
+        .homework {
+            background: linear-gradient(135deg, rgba(139, 92, 246, .08), rgba(59, 130, 246, .08));
+            border: 1px solid rgba(139, 92, 246, .2);
+            border-radius: var(--r-lg);
+            padding: 20px;
+            margin: 20px 0
+        }
+
+        .hw-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px
+        }
+
+        .hw-icon {
+            width: 36px;
+            height: 36px;
+            background: rgba(139, 92, 246, .15);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px
+        }
+
+        .hw-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text)
+        }
+
+        .hw-subtitle {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 2px
+        }
+
+        .hw-task {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.7;
+            margin-bottom: 14px
+        }
+
+        .hw-task strong {
+            color: var(--text)
+        }
+
+        .hw-textarea {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border2);
+            border-radius: var(--r-md);
+            padding: 12px 14px;
+            font-size: 13px;
+            color: var(--text);
+            font-family: 'Manrope', sans-serif;
+            resize: vertical;
+            min-height: 90px;
+            line-height: 1.6;
+            transition: border-color .15s
+        }
+
+        .hw-textarea:focus {
+            outline: none;
+            border-color: var(--accent)
+        }
+
+        .hw-textarea::placeholder {
+            color: var(--muted2)
+        }
+
+        .hw-submit {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background: var(--purple);
+            color: #fff;
+            border: none;
+            border-radius: var(--r-md);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Manrope', sans-serif;
+            transition: opacity .15s
+        }
+
+        .hw-submit:hover {
+            opacity: .85
+        }
+
+        /* STEP NAVIGATION */
+        .step-nav-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border)
+        }
+
+        .btn-prev-step {
+            padding: 10px 18px;
+            background: transparent;
+            border: 1px solid var(--border2);
+            border-radius: var(--r-md);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Manrope', sans-serif;
+            color: var(--muted);
+            transition: all .15s
+        }
+
+        .btn-prev-step:hover {
+            background: var(--card2);
+            color: var(--text)
+        }
+
+        .step-dots {
+            display: flex;
+            gap: 6px;
+            align-items: center
+        }
+
+        .step-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border2);
+            transition: all .2s
+        }
+
+        .step-dot.active {
+            background: var(--accent);
+            width: 20px;
+            border-radius: 4px
+        }
+
+        .step-dot.done {
+            background: var(--green)
+        }
+
+        .btn-next-step {
+            padding: 10px 22px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: var(--r-md);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Manrope', sans-serif;
+            transition: all .15s;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .btn-next-step:hover {
+            background: var(--accent2)
+        }
+
+        .btn-next-step.finish {
+            background: var(--green)
+        }
+
+        .btn-next-step.finish:hover {
+            background: var(--green2)
+        }
+
+        /* XP TOAST */
+        .xp-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card2);
+            border: 1px solid var(--gold);
+            border-radius: var(--r-md);
+            padding: 12px 18px;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--gold2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            transform: translateY(-8px);
+            transition: all .3s;
+            pointer-events: none;
+            z-index: 9999
+        }
+
+        .xp-toast.show {
+            opacity: 1;
+            transform: translateY(0)
+        }
+
+        /* COMMUNITY BLOCK */
+        .community-block {
+            background: linear-gradient(135deg, var(--card2) 0%, rgba(139, 92, 246, .15) 100%);
+            border: 1px solid rgba(139, 92, 246, .3);
+            border-radius: var(--r-xl);
+            padding: 36px 32px;
+            margin-top: 32px;
+            text-align: center;
+            display: none
+        }
+
+        .community-block.visible {
+            display: block
+        }
+
+        .comm-icon {
+            font-size: 48px;
+            margin-bottom: 16px
+        }
+
+        .comm-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #fff, var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent
+        }
+
+        .comm-desc {
+            font-size: 14px;
+            color: var(--muted);
+            max-width: 480px;
+            margin: 0 auto 20px;
+            line-height: 1.8
+        }
+
+        .comm-perks {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 24px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto
+        }
+
+        .comm-perk {
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid var(--border);
+            border-radius: var(--r-md);
+            padding: 14px 10px;
+            font-size: 12px;
+            color: var(--muted)
+        }
+
+        .comm-perk-icon {
+            font-size: 22px;
+            margin-bottom: 6px
+        }
+
+        .comm-btn {
+            padding: 14px 36px;
+            background: linear-gradient(135deg, var(--purple), var(--accent));
+            color: #fff;
+            border: none;
+            border-radius: var(--r-lg);
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Manrope', sans-serif;
+            transition: opacity .2s
+        }
+
+        .comm-btn:hover {
+            opacity: .88
+        }
+
+        /* DIPLOMA */
+        .diploma-block {
+            background: var(--card);
+            border: 1px solid var(--border2);
+            border-radius: var(--r-xl);
+            padding: 28px;
+            margin-top: 16px;
+            text-align: center;
+            display: none
+        }
+
+        .diploma-block.visible {
+            display: block
+        }
+
+        .diploma-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            margin-bottom: 8px;
+            color: var(--gold2)
+        }
+
+        .diploma-name {
+            font-size: 14px;
+            color: var(--muted)
+        }
+
+        /* LOCKED OVERLAY */
+        .locked-msg {
+            padding: 28px;
+            text-align: center;
+            color: var(--muted)
+        }
+
+        .locked-icon {
+            font-size: 32px;
+            margin-bottom: 10px
+        }
+
+        .locked-text {
+            font-size: 14px;
+            line-height: 1.6
+        }
+
+        /* RESPONSIVE */
+        @media(max-width:600px) {
+            .stats-row {
+                grid-template-columns: 1fr 1fr
+            }
+
+            .flipgrid {
+                grid-template-columns: 1fr
+            }
+
+            .calc-lbl {
+                min-width: 130px;
+                font-size: 11px
+            }
+
+            .calc-row {
+                gap: 8px
+            }
+
+            .calc-outputs.c3 {
+                grid-template-columns: 1fr 1fr
+            }
+
+            .comm-perks {
+                grid-template-columns: 1fr 1fr
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="course-wrap">
+
+        <!-- HEADER -->
+        <div class="course-header">
+            <div class="header-top">
+                <div class="logo-mark">
+                    <div class="logo-icon">B</div>
+                    <div class="logo-text">Bitbon <span>Academy</span></div>
+                </div>
+                <div class="header-xp">
+                    <div class="streak-pill">🔥 <span id="streak-val">1</span> день</div>
+                    <div class="xp-pill">⚡ <span id="total-xp">0</span> XP</div>
+                </div>
+            </div>
+            <div class="course-title-block">
+                <div class="course-eyebrow">Фінансова стратегія на все життя</div>
+                <h1 class="course-title">Від нуля до власної<br>інвестиційної системи</h1>
+                <p class="course-subtitle">7 модулів · Відео від ментора · Живі практики · Спільнота Bitbon-інвесторів
+                </p>
+            </div>
+            <div class="xp-section">
+                <div class="xp-meta">
+                    <span class="xp-level" id="level-name">Рівень 1 — Початківець 🌱</span>
+                    <span class="xp-count"><span id="xp-cur">0</span> / <span id="xp-max">500</span> XP</span>
+                </div>
+                <div class="xp-track">
+                    <div class="xp-fill" id="xp-fill" style="width:0%"></div>
+                </div>
+                <div class="xp-milestones">
+                    <span class="xp-milestone">0</span>
+                    <span class="xp-milestone">500</span>
+                    <span class="xp-milestone">1200</span>
+                    <span class="xp-milestone">2500</span>
+                    <span class="xp-milestone">4500+</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-row">
+            <div class="stat-card s-accent">
+                <div class="stat-val" id="s-modules">0/7</div>
+                <div class="stat-lbl">Модулів</div>
+            </div>
+            <div class="stat-card s-gold">
+                <div class="stat-val" id="s-xp">0</div>
+                <div class="stat-lbl">XP зароблено</div>
+            </div>
+            <div class="stat-card s-green">
+                <div class="stat-val" id="s-tasks">0</div>
+                <div class="stat-lbl">Завдань</div>
+            </div>
+            <div class="stat-card s-purple">
+                <div class="stat-val" id="s-days">1</div>
+                <div class="stat-lbl">Днів навчання</div>
+            </div>
+        </div>
+
+        <!-- MODULES -->
+        <div class="modules-section">
+            <div class="section-label">Програма курсу</div>
+            <div id="modules-container"></div>
+        </div>
+
+        <!-- COMMUNITY -->
+        <div class="community-block" id="community-block">
+            <div class="comm-icon">🏛️</div>
+            <div class="comm-title">Закритий Bitbon-клуб</div>
+            <div class="comm-desc">Ви пройшли повний курс і отримали фінансову стратегію на все життя. Тепер — у коло
+                людей, які будують активи нового покоління разом.</div>
+            <div class="comm-perks" style="margin-bottom:24px">
+                <div class="comm-perk">
+                    <div class="comm-perk-icon">💬</div>Закритий чат учасників
+                </div>
+                <div class="comm-perk">
+                    <div class="comm-perk-icon">📊</div>Спільний аналіз ринку
+                </div>
+                <div class="comm-perk">
+                    <div class="comm-perk-icon">⚡</div>Живі сесії з ментором
+                </div>
+                <div class="comm-perk">
+                    <div class="comm-perk-icon">🔷</div>Bitbon-проекти першими
+                </div>
+                <div class="comm-perk">
+                    <div class="comm-perk-icon">🤝</div>Нетворкінг інвесторів
+                </div>
+                <div class="comm-perk">
+                    <div class="comm-perk-icon">📚</div>Ексклюзивні матеріали
+                </div>
+            </div>
+            <button class="comm-btn" onclick="alert('Вставте посилання на ваш Telegram/Discord клуб')">Вступити до
+                ком'юніті →</button>
+        </div>
+
+    </div>
+
+    <!-- XP TOAST -->
+    <div class="xp-toast" id="xp-toast">⚡ +<span id="toast-xp">0</span> XP</div>
+
+    <script>
+        // ============================================================
+        // DATA
+        // ============================================================
+        const fmt = n => Math.round(n).toLocaleString('uk-UA');
+
+        const LEVELS = [
+            { min: 0, max: 500, name: "Початківець 🌱" },
+            { min: 500, max: 1200, name: "Учень 📖" },
+            { min: 1200, max: 2500, name: "Практик 💼" },
+            { min: 2500, max: 4500, name: "Стратег 📊" },
+            { min: 4500, max: 7000, name: "Інвестор 💎" },
+            { min: 7000, max: 99999, name: "Майстер капіталу 🏆" }
+        ];
+
+        const MODULES = [
+            {
+                id: 0, emoji: "🧠", color: "#8b5cf6", title: "Психологія грошей",
+                desc: "Ментальні блоки · Емоції і рішення · Фінансова ідентичність",
+                totalXP: 250,
+                steps: [
+                    {
+                        title: "Ваш фінансовий код",
+                        xp: 60,
+                        videoUrl: "YOUR_YOUTUBE_URL_1",
+                        videoDuration: "8–12 хв",
+                        videoTitle: "Урок 1: Чому психологія важливіша за математику",
+                        content: `
+        <div class="theory-block">
+          <div class="theory-h2">80% фінансового успіху — це поведінка</div>
+          <p class="theory-p">Нобелівський лауреат <strong>Даніель Канеман</strong> довів: фінансові рішення приймаються емоційно, а потім раціоналізуються. Ваші переконання про гроші сформувались до 7 років — і керують вами досі.</p>
+          <div class="insight"><div class="insight-tag">Нейронаука</div><p>Коли мозок бачить можливість "швидко збагатіти" — активується та сама зона, що і при азартних іграх. Дофаміновий сплеск вимикає префронтальну кору (логіку). Тому FOMO так руйнівний для фінансів.</p></div>
+          <div class="theory-h3">Натисніть картку — розкрийте правду про себе</div>
+          <div class="flip-hint">👆 Натисніть, щоб перегорнути</div>
+          <div class="flipgrid">
+            <div class="flipcard" onclick="this.classList.toggle('flipped')"><div class="flipcard-inner"><div class="flipcard-front"><div class="flip-icon">💸</div><div class="flip-title">«Гроші — це зло»</div><div class="flip-sub">Натисніть, щоб дізнатись правду</div></div><div class="flipcard-back"><div class="flip-answer">Гроші — нейтральний інструмент. Вони підсилюють те, ким ви вже є. Ця установка блокує ваш фінансовий ріст.</div></div></div></div>
+            <div class="flipcard" onclick="this.classList.toggle('flipped')"><div class="flipcard-inner"><div class="flipcard-front"><div class="flip-icon">😰</div><div class="flip-title">«Я не заслуговую»</div><div class="flip-sub">Натисніть, щоб дізнатись правду</div></div><div class="flipcard-back"><div class="flip-answer">Синдром самозванця є у 70% людей. Лікується просто: дія → результат → нова ідентичність. Починайте малим.</div></div></div></div>
+            <div class="flipcard" onclick="this.classList.toggle('flipped')"><div class="flipcard-inner"><div class="flipcard-front"><div class="flip-icon">🎰</div><div class="flip-title">«Можна швидко розбагатіти»</div><div class="flip-sub">Натисніть, щоб дізнатись правду</div></div><div class="flipcard-back"><div class="flip-answer">Середній мільярдер будував статок 22 роки. Швидкі схеми — це перерозподіл від наївних до шахраїв. Завжди.</div></div></div></div>
+            <div class="flipcard" onclick="this.classList.toggle('flipped')"><div class="flipcard-inner"><div class="flipcard-front"><div class="flip-icon">🛒</div><div class="flip-title">«Витрачу зараз»</div><div class="flip-sub">Натисніть, щоб дізнатись правду</div></div><div class="flipcard-back"><div class="flip-answer">Гіперболічне дисконтування: мозок переоцінює сьогодні і знецінює майбутнє. Це інстинкт — але з ним можна працювати.</div></div></div></div>
+          </div>
+          <div class="quiz-block">
+            <div class="quiz-q">Канеман: біль від втрати у скільки разів сильніший за радість від прибутку?</div>
+            <div class="quiz-opts">
+              <button class="q-opt" onclick="quiz(this,false,'Насправді у 2.5 рази. Це Prospect Theory — ми боїмося втратити сильніше ніж раді знайти.')">1.5 рази</button>
+              <button class="q-opt" onclick="quiz(this,true,'Правильно! Саме тому ми тримаємо збиткові акції і продаємо прибуткові занадто рано.')">2.5 рази</button>
+              <button class="q-opt" onclick="quiz(this,false,'Насправді 2.5 рази — і цього вже достатньо, щоб зруйнувати будь-яку стратегію.')">5 разів</button>
+            </div>
+            <div class="quiz-fb"></div>
+          </div>
+        </div>
+      `
+                    },
+                    {
+                        title: "Правило 48 годин та FOMO",
+                        xp: 70,
+                        videoUrl: "YOUR_YOUTUBE_URL_2",
+                        videoDuration: "10–14 хв",
+                        videoTitle: "Урок 2: Як я ледь не втратив гроші через FOMO — мій особистий досвід",
+                        content: `
+        <div class="theory-block">
+          <div class="theory-h2">FOMO — головна причина збитків</div>
+          <p class="theory-p">Fear of Missing Out — <strong>страх пропустити</strong> — це найдорожча емоція для інвестора. Дослідження JP Morgan: інвестори, які купують "по гарячих новинах", отримують дохідність на 47% нижче ринкової.</p>
+          <div class="warn"><p>⚡ <strong>Ефект натовпу:</strong> Коли "всі купують" — актив вже дорогий. Коли "всі продають" — вже дешевий. Слідкуючи за натовпом ви завжди запізнюєтесь.</p></div>
+        </div>
+        <div class="scenario-box">
+          <div class="scenario-story"><strong>📱 Ситуація:</strong> Ваш друг у WhatsApp: "Bitbon злетів на 40%! Всі купують! Я вкладаю всі заощадження — ти що, не хочеш заробити?!" У вас є 50 000 грн подушки безпеки.</div>
+          <div class="scenario-q">Що ви зробите?</div>
+          <div class="sc-opts" id="sc-m0s1">
+            <button class="sc-opt" onclick="scenario('sc-m0s1',this,false,'❌ Класична FOMO-пастка. Подушка безпеки — не для інвестицій. Актив вже виріс — ви купуєте на піку чужих емоцій.')">Вкладаю всі 50 000 грн зараз — не хочу пропустити</button>
+            <button class="sc-opt" onclick="scenario('sc-m0s1',this,false,'⚠️ Краще, але це теж емоційне рішення. Подушку безпеки не чіпаємо ніколи.')">Вкладаю 10 000 — не так страшно</button>
+            <button class="sc-opt" onclick="scenario('sc-m0s1',this,true,'✅ Правило 48 годин! Будь-яке рішення під тиском емоцій — відкладіть на 2 доби. 90% таких рішень зникають самі.')">Дякую, дам собі 48 годин і вивчу самостійно</button>
+            <button class="sc-opt" onclick="scenario('sc-m0s1',this,false,'⚠️ Ігнорування — не стратегія. Причина має бути в аналізі, а не в незнанні.')">Ігнорую — я не розбираюсь</button>
+          </div>
+          <div class="sc-result" id="sc-m0s1-res"></div>
+        </div>
+        <div class="theory-block">
+          <div class="theory-h3">Техніка: Щоденник рішень</div>
+          <p class="theory-p">Перед кожним фінансовим рішенням запишіть: <em>яку емоцію я зараз відчуваю?</em> Якщо є страх, жадібність або зовнішній тиск — зупиніться на 48 годин. Одна ця звичка рятує від тисяч помилок.</p>
+        </div>
+        <div class="homework">
+          <div class="hw-header"><div class="hw-icon">📝</div><div><div class="hw-title">Домашнє завдання</div><div class="hw-subtitle">Виконайте після перегляду відео</div></div></div>
+          <div class="hw-task">Згадайте <strong>одне фінансове рішення</strong>, яке ви прийняли під впливом емоцій. Що це було? Який результат? Що б ви зробили інакше з правилом 48 годин?</div>
+          <textarea class="hw-textarea" placeholder="Напишіть свою відповідь тут..."></textarea>
+          <button class="hw-submit" onclick="saveHW(this)">Зберегти відповідь ✓</button>
+        </div>
+      `
+                    },
+                    {
+                        title: "Фінансова ідентичність",
+                        xp: 60,
+                        videoUrl: "YOUR_YOUTUBE_URL_3",
+                        videoDuration: "8–10 хв",
+                        videoTitle: "Урок 3: Як стати 'людиною, яка будує багатство' — мій маніфест",
+                        content: `
+        <div class="theory-block">
+          <div class="theory-h2">Ви — це те, як ви поводитесь з грошима щодня</div>
+          <p class="theory-p">Джеймс Кліар ("Атомні звички"): <em>"Кожна дія — це голос за версію себе, якою ви хочете стати."</em> Не "я намагаюсь заощаджувати" — а <strong>"я людина, яка інвестує частину кожного доходу."</strong></p>
+          <div class="insight"><div class="insight-tag">Нейропластичність</div><p>Мозок буквально переформовується через повторювані дії. <strong>66 днів</strong> потрібно, щоб нова фінансова звичка стала автоматичною (UCL). Не 21 день — це міф. Але 66 днів — і це вже ваш новий "я".</p></div>
+          <div class="theory-h3">Ваш фінансовий маніфест — відмітьте кожен пункт вголос</div>
+        </div>
+        <ul class="task-list" id="tl-m0s2">
+          <li class="task-item" onclick="taskDone(this,10)"><span class="task-check"></span><span class="task-text">Я контролюю свої гроші, а не вони мене</span></li>
+          <li class="task-item" onclick="taskDone(this,10)"><span class="task-check"></span><span class="task-text">Я інвестую частину кожного доходу — незалежно від суми</span></li>
+          <li class="task-item" onclick="taskDone(this,10)"><span class="task-check"></span><span class="task-text">Я приймаю фінансові рішення тільки після аналізу, не під емоціями</span></li>
+          <li class="task-item" onclick="taskDone(this,10)"><span class="task-check"></span><span class="task-text">Я будую активи, а не лише заробляю і витрачаю</span></li>
+          <li class="task-item" onclick="taskDone(this,10)"><span class="task-check"></span><span class="task-text">Я навчаюсь фінансовій грамотності кожного тижня</span></li>
+        </ul>
+      `
+                    }
+                ]
+            },
+            {
+                id: 1, emoji: "📊", color: "#0891b2", title: "Облік і контроль",
+                desc: "Бюджет 50/30/20 · Подушка безпеки · Автоматизація",
+                totalXP: 280,
+                steps: [
+                    {
+                        title: "Де насправді ваші гроші",
+                        xp: 70,
+                        videoUrl: "YOUR_YOUTUBE_URL_4",
+                        videoDuration: "10–14 хв",
+                        videoTitle: "Урок 4: Показую свою реальну таблицю витрат",
+                        content: `
+        <div class="theory-block">
+          <div class="theory-h2">Ви не можете керувати тим, що не вимірюєте</div>
+          <p class="theory-p">Стенфордське дослідження (2023): <strong>люди, які ведуть облік витрат, заощаджують на 34% більше</strong> — без зміни доходу. Просто бачення реальної картини змінює поведінку.</p>
+          <div class="insight"><div class="insight-tag">Принцип Хоторна</div><p>Сам факт спостереження за поведінкою <strong>змінює цю поведінку</strong>. Коли ви бачите 3 000 грн на каві за місяць — ви автоматично починаєте думати інакше. Без зусиль.</p></div>
+        </div>
+        <div class="pyramid">
+          <div class="pyr-item open" onclick="pyrToggle(this)"><div class="pyr-head"><span class="pyr-head-icon">🏠</span><span class="pyr-head-title">Обов'язкові (Needs) — ціль: до 50%</span><span class="pyr-head-arrow">▾</span></div><div class="pyr-body">Житло, їжа, транспорт, комунальні, медицина, базовий одяг. Якщо більше 50% доходу — потрібно або скорочувати, або збільшувати дохід.</div></div>
+          <div class="pyr-item" onclick="pyrToggle(this)"><div class="pyr-head"><span class="pyr-head-icon">🎭</span><span class="pyr-head-title">Бажання (Wants) — ціль: до 30%</span><span class="pyr-head-arrow">▾</span></div><div class="pyr-body">Ресторани, розваги, подорожі, хобі, гаджети, шопінг. Потрібні для якості життя — але не більше 30%. Скорочуються першими при нестачі грошей.</div></div>
+          <div class="pyr-item" onclick="pyrToggle(this)"><div class="pyr-head"><span class="pyr-head-icon">📚</span><span class="pyr-head-title">Розвиток — не скорочувати</span><span class="pyr-head-arrow">▾</span></div><div class="pyr-body">Освіта, книги, курси, здоров'я, спорт. Найвища ROI у довгостроковій перспективі. Це інвестиції в себе — ніколи не скорочуйте без крайньої потреби.</div></div>
+          <div class="pyr-item" onclick="pyrToggle(this)"><div class="pyr-head"><span class="pyr-head-icon">💎</span><span class="pyr-head-title">Майбутнє (Future) — ціль: мінімум 20%</span><span class="pyr-head-arrow">▾</span></div><div class="pyr-body">Заощадження, інвестиції, погашення боргів. <strong>Правило "Pay Yourself First":</strong> відкладіть 20% одразу в день зарплати — решту розподіляйте. Не навпаки.</div></div>
+        </div>
+      `
+                    },
+                    {
+                        title: "Метод 50/30/20",
+                        xp: 80,
+                        videoUrl: "YOUR_YOUTUBE_URL_5",
+                        videoDuration: "12–15 хв",
+                        videoTitle: "Урок 5: Мій бюджет 50/30/20 — як я це роблю на практиці",
+                        content: `
+        <div class="theory-block">
+          <div class="theory-h2">Золотий розподіл — метод сенатора Воррен</div>
+          <p class="theory-p">Розроблений Елізабет Воррен (Гарвард), перевірений на мільйонах. Простий. Гнучкий. Ефективний.</p>
+          <div class="formula"><div class="formula-main">50% · 30% · 20%</div><div class="formula-sub">Потреби · Бажання · Майбутнє — і головне правило: <strong>спочатку 20%, потім все решта</strong></div></div>
+        </div>
+        <div class="calc-box">
+          <div class="calc-title">🔢 Калькулятор бюджету</div>
+          <div class="calc-row"><span class="calc-lbl">Місячний дохід (грн)</span><input type="range" min="10000" max="500000" step="5000" value="50000" oninput="calcBudget(this.value)"><span class="calc-num" id="cb-val">50 000</span></div>
+          <div class="calc-outputs c3">
+            <div class="calc-out"><div class="co-val" id="cb-need">25 000</div><div class="co-lbl">🏠 Потреби</div></div>
+            <div class="calc-out gold"><div class="co-val" id="cb-want">15 000</div><div class="co-lbl">🎭 Бажання</div></div>
+            <div class="calc-out green"><div class="co-val" id="cb-save">10 000</div><div class="co-lbl">💎 Майбутнє</div></div>
+          </div>
+        </div>
+        <div class="warn"><p>⚠️ <strong>Якщо 20% зараз нереально:</strong> Почніть з 1%. Серйозно. Найгірший варіант — не починати взагалі. Збільшуйте на 1% кожні 2 місяці — це 12% за рік.</p></div>
+        <ul class="task-list" id="tl-m1s1">
+          <li class="task-item" onclick="taskDone(this,15)"><span class="task-check"></span><span class="task-text">Я підрахував свої реальні витрати за останній місяць по категоріях</span></li>
+          <li class="task-item" onclick="taskDone(this,15)"><span class="task-check"></span><span class="task-text">Я відкрив окремий рахунок для заощаджень і назвав його "Майбутнє"</span></li>
+          <li class="task-item" onclick="taskDone(this,15)"><span class="task-check"></span><span class="task-text">Я налаштував автоматичне перерахування в день зарплати</span></li>
+        </ul>
+        <div class="homework">
+          <div class="hw-header"><div class="hw-icon">📝</div><div><div class="hw-title">Домашнє завдання</div><div class="hw-subtitle">Ваш реальний бюджет</div></div></div>
+          <div class="hw-task">Заповніть свій бюджет за методом 50/30/20. Напишіть: <strong>ваш дохід, скільки зараз іде на кожну категорію і наскільки це відрізняється від ідеалу.</strong> Що ви скоротите першим?</div>
+          <textarea class="hw-textarea" placeholder="Мій дохід: ... грн&#10;Потреби зараз: ... (ціль 50%)&#10;Бажання зараз: ... (ціль 30%)&#10;Заощадження зараз: ... (ціль 20%)&#10;Що скорочу: ..."></textarea>
+          <button class="hw-submit" onclick="saveHW(this)">Зберегти ✓</button>
+        </div>
+      `
+                    },
+                    {
+                        title: "Подушка безпеки — база всього",
+                        xp: 80,
+                        videoUrl: "YOUR_YOUTUBE_URL_6",
+                        videoDuration: "10–12 хв",
+                        videoTitle: "Урок 6: Де я тримаю свою подушку безпеки — реальний досвід",
+                        content: `
+        <div class="theory-block">
+          <div class="theory-h2">Без подушки ви фінансово вразливі</div>
+          <p class="theory-p">Подушка безпеки — не "зайві гроші". Це <strong>захист вашої інвестиційної стратегії</strong>. Без неї перша криза (хвороба, звільнення) змусить продати інвестиції на дні ринку — в найгірший момент.</p>
+          <div class="formula"><div class="formula-main">3 – 6 місяців витрат</div><div class="formula-sub">Окремий рахунок · Легкодоступно · Без ризику · Не чіпати без надзвичайних обставин</div></div>
+        </div>
+        <div class="calc-box">
+          <div class="calc-title">🛡️ Ваша подушка безпеки</div>
+          <div class="calc-row"><span class="calc-lbl">Місячні витрати (грн)</span><input type="range" min="5000" max="150000" step="1000" value="25000" oninput="calcCushion(this.value)"><span class="calc-num" id="cc-val">25 000</span></div>
+          <div class="calc-outputs c3">
+            <div class="calc-out"><div class="co-val" id="cc-3">75 000</div><div class="co-lbl">Мінімум × 3</div></div>
+            <div class="calc-out accent"><div class="co-val" id="cc-6">150 000</div><div class="co-lbl">Оптимум × 6</div></div>
+            <div class="calc-out gold"><div class="co-val" id="cc-9">225 000</div><div class="co-lbl">Ідеал × 9</div></div>
+          </div>
+        </div>
+        <div class="insight"><div class="insight-tag">Де тримати в Україні?</div><p><strong>ОВДП (облігації держпозики)</strong> — дохідність 14–17% річних, гарантовані державою. Або валютний депозит у надійному банку. Не під матрацом, не в крипті, не в акціях.</p></div>
+        <div class="quiz-block">
+          <div class="quiz-q">Чому НЕ можна тримати подушку безпеки в акціях?</div>
+          <div class="quiz-opts">
+            <button class="q-opt" onclick="quiz(this,false,'Акції можуть впасти на 40–60% саме тоді, коли вам потрібні гроші. Це руйнує всю ідею.')">Акції дають більшу дохідність — це краще</button>
+            <button class="q-opt" onclick="quiz(this,true,'Правильно! Акції можуть впасти саме в момент кризи. Подушка має бути стабільною та ліквідною завжди.')">Акції можуть впасти коли гроші потрібні терміново</button>
+            <button class="q-opt" onclick="quiz(this,false,'Ліквідність важлива, але головна причина — ризик падіння вартості в кризу.')">Акції важко продати швидко</button>
+          </div>
+          <div class="quiz-fb"></div>
+        </div>
+      `
+                    }
+                ]
+            },
+            {
+                id: 2, emoji: "⚖️", color: "#d97706", title: "Боргова стратегія",
+                desc: "Добрий і поганий борг · Метод лавини · Метод сніжної кулі",
+                totalXP: 220,
+                steps: [
+                    {
+                        title: "Добрий і поганий борг",
+                        xp: 70,
+                        videoUrl: "YOUR_YOUTUBE_URL_7",
+                        videoDuration: "10–12 хв",
+                        videoTitle: "Урок 7: Мій досвід з кредитами — що я зробив правильно і де помилився",
+                        content: `
+        <div class="theory-block">
+          <div class="theory-h2">Борг — це інструмент. Як молоток.</div>
+          <p class="theory-p">Молоток може побудувати будинок або розбити палець — залежить від того, як тримати. <strong>Борг — так само.</strong></p>
+          <div class="flipgrid">
+            <div class="flipcard" onclick="this.classList.toggle('flipped')"><div class="flipcard-inner"><div class="flipcard-front"><div class="flip-icon">✅</div><div class="flip-title">Хороший борг</div><div class="flip-sub">Що це таке?</div></div><div class="flipcard-back"><div class="flip-answer">Створює актив або збільшує майбутній дохід: іпотека під оренду, освіта з ROI, бізнес-кредит із конкретним планом повернення.</div></div></div></div>
+            <div class="flipcard" onclick="this.classList.toggle('flipped')"><div class="flipcard-inner"><div class="flipcard-front"><div class="flip-icon">❌</div><div class="flip-title">Поганий борг</div><div class="flip-sub">Що це таке?</div></div><div class="flipcard-back"><div class="flip-answer">Споживчий кредит на телефон, кредитна картка для шопінгу. Ставки 40–90% річних — математично неможливо вирватись без активних зусиль.</div></div></div></div>
+          </div>
+          <div class="danger"><p>🚨 <strong>Мікропозики (МФО):</strong> Ефективна ставка часто 500–1000% річних. Борг 1 000 грн через рік = 10 000 грн. Ніколи, ні за яких умов, ніякого виправдання.</p></div>
+        </div>
+        <div class="quiz-block">
+          <div class="quiz-q">Іпотека на квартиру, яку ви здаєте в оренду і орендна плата покриває виплату — це:</div>
+          <div class="quiz-opts">
+            <button class="q-opt" onclick="quiz(this,true,'Правильно! Якщо орендна плата ≥ виплата за іпотекою — квартира сама себе оплачує. Це хороший борг.')">Потенційно хороший борг — актив, що сам себе оплачує</button>
+            <button class="q-opt" onclick="quiz(this,false,'Не завжди. Якщо оренда покриває виплати — це актив, що генерує капітал.')">Завжди поганий борг — боргів треба уникати</button>
+            <button class="q-opt" onclick="quiz(this,false,'Ставка важлива, але ключовий критерій — генерує борг актив чи ні.')">Залежить тільки від процентної ставки</button>
+          </div>
+          <div class="quiz-fb"></div>
+        </div>
+      `
+                    },
+                    {
+                        title: "Лавина і сніжна куля",
+                        xp: 80,
+                        videoUrl: "YOUR_YOUTUBE_URL_8",
+                        videoDuration: "12–15 хв",
+                        videoTitle: "Урок 8: Як я погасив кредити і що зробив з вивільненими грошима",
+                        content: `
+        <div class="theory-block">
+          <div class="theory-h2">Дві стратегії — обирайте свою</div>
+          <div class="flipgrid">
+            <div class="flipcard" onclick="this.classList.toggle('flipped')"><div class="flipcard-inner"><div class="flipcard-front"><div class="flip-icon">🏔️</div><div class="flip-title">Метод лавини</div><div class="flip-sub">Математично оптимальний</div></div><div class="flipcard-back"><div class="flip-answer">Гасьте борг із найвищою відсотковою ставкою першим. Максимальна економія грошей. Потребує терпіння — результат не одразу.</div></div></div></div>
+            <div class="flipcard" onclick="this.classList.toggle('flipped')"><div class="flipcard-inner"><div class="flipcard-front"><div class="flip-icon">⛄</div><div class="flip-title">Метод сніжної кулі</div><div class="flip-sub">Психологічно ефективний</div></div><div class="flipcard-back"><div class="flip-answer">Гасьте найменший борг першим. Швидкі перемоги = мотивація. Wharton School: люди з цим методом виходять з боргів швидше через силу імпульсу.</div></div></div></div>
+          </div>
+          <div class="insight"><div class="insight-tag">Ключовий принцип обох методів</div><p>Мінімальні платежі по всіх боргах + <strong>всі вільні гроші → на цільовий борг</strong>. Після погашення — суму цільового платежу додаєте до наступного. Ефект прискорення.</p></div>
+        </div>
+        <div class="scenario-box">
+          <div class="scenario-story"><strong>Ваші борги:</strong> Кредитна картка — 25 000 грн (48%/рік) · Кредит на ноутбук — 8 000 грн (36%/рік) · Кредит на авто — 120 000 грн (22%/рік). Вільних 3 000 грн/міс понад мінімум.</div>
+          <div class="scenario-q">Метод лавини: куди направити вільні 3 000 грн?</div>
+          <div class="sc-opts" id="sc-m2s1">
+            <button class="sc-opt" onclick="scenario('sc-m2s1',this,true,'✅ Правильно! Лавина: картка 48% — найдорожчий борг. Ви економите максимум на відсотках.')">На кредитну картку — найвища ставка 48%</button>
+            <button class="sc-opt" onclick="scenario('sc-m2s1',this,false,'❌ Це метод сніжної кулі. Для лавини — вибираємо найвищу ставку, а не найменшу суму.')">На ноутбук — найменша сума 8 000 грн</button>
+            <button class="sc-opt" onclick="scenario('sc-m2s1',this,false,'❌ Рівний розподіл — найгірша стратегія. Ви платите відсотки скрізь і ніде не досягаєте прориву.')">Ділю порівну між усіма трьома</button>
+          </div>
+          <div class="sc-result" id="sc-m2s1-res"></div>
+        </div>
+        <div class="homework">
+          <div class="hw-header"><div class="hw-icon">📝</div><div><div class="hw-title">Домашнє завдання</div><div class="hw-subtitle">Карта ваших боргів</div></div></div>
+          <div class="hw-task">Випишіть <strong>всі свої борги</strong> зі сумою та відсотковою ставкою. Визначте яку стратегію обираєте і чому — лавина чи сніжна куля? Порахуйте скільки місяців займе погашення при вашому вільному бюджеті.</div>
+          <textarea class="hw-textarea" placeholder="Борг 1: ... грн, ставка ...%&#10;Борг 2: ... грн, ставка ...%&#10;&#10;Обираю стратегію: лавина / сніжна куля&#10;Причина: ...&#10;Час до погашення: ... місяців"></textarea>
+          <button class="hw-submit" onclick="saveHW(this)">Зберегти ✓</button>
+        </div>
+      `
+                    }
+                ]
+            },
+            {
+                id: 3, emoji: "📈", color: "#0f766e", title: "Основи інвестування",
+                desc: "Складний відсоток · Класи активів · Диверсифікація · DCA",
+                totalXP: 320,
+                steps: [
+                    {
+                        title: "Складний відсоток — 8 чудо світу",
+                        xp: 80,
+                        videoUrl: "YOUR_YOUTUBE_URL_9",
+                        videoDuration: "12–15 хв",
+                        videoTitle: "Урок 9: Показую свій інвестиційний рахунок — реальні цифри за 3 роки",
+                        content: `
+        <div class="theory-block">
+          <div class="theory-h2">Формула, яка змінює все</div>
+          <p class="theory-p"><em>"Складний відсоток — восьме чудо світу. Хто розуміє — заробляє, хто не розуміє — платить."</em> Уоррен Баффет почав інвестувати у 11 років. <strong>99% його багатства з'явилось після 50.</strong></p>
+        </div>
+        <div class="calc-box">
+          <div class="calc-title">⚡ Калькулятор складного відсотка</div>
+          <div class="calc-row"><span class="calc-lbl">Початкова сума (грн)</span><input type="range" min="1000" max="1000000" step="1000" value="20000" oninput="calcCompound()"><span class="calc-num" id="comp-pv">20 000</span></div>
+          <div class="calc-row"><span class="calc-lbl">Поповнення щомісяця (грн)</span><input type="range" min="0" max="100000" step="500" value="5000" oninput="calcCompound()"><span class="calc-num" id="comp-pmt">5 000</span></div>
+          <div class="calc-row"><span class="calc-lbl">Річна дохідність (%)</span><input type="range" min="5" max="35" step="1" value="15" oninput="calcCompound()"><span class="calc-num" id="comp-r">15%</span></div>
+          <div class="calc-row"><span class="calc-lbl">Горизонт (років)</span><input type="range" min="1" max="30" step="1" value="15" oninput="calcCompound()"><span class="calc-num" id="comp-n">15</span></div>
+          <div class="calc-outputs c2">
+            <div class="calc-out"><div class="co-val" id="comp-invested">920 000 грн</div><div class="co-lbl">Вкладено всього</div></div>
+            <div class="calc-out green"><div class="co-val" id="comp-total">4 230 000 грн</div><div class="co-lbl">Підсумкова сума</div></div>
+          </div>
+          <div style="text-align:center;margin-top:10px;font-size:13px;color:#8b8fa8">Дохід від складного відсотка: <strong id="comp-gain" style="color:#10b981">+3 310 000 грн</strong></div>
+        </div>
+      `
+                    },
+                    {
+                        title: "Класи активів",
+                        xp: 80,
+                        videoUrl: "YOUR_YOUTUBE_URL_10",
+                        videoDuration: "15–18 хв",
+                        videoTitle: "Урок 10: Показую свій реальний портфель — що в ньому і чому",
+                        content: `
+        <div class="theory-block">
+          <div class="theory-h2">Де можуть жити ваші гроші</div>
+          <p class="theory-p">Різні активи поводяться по-різному в різних економічних умовах. <strong>Мета — мати активи, які не падають одночасно.</strong> Це і є диверсифікація.</p>
+        </div>
+        <div class="pyramid">
+          <div class="pyr-item open" onclick="pyrToggle(this)"><div class="pyr-head"><span class="pyr-head-icon">🏛️</span><span class="pyr-head-title">Облігації / ОВДП — низький ризик</span><span class="pyr-head-arrow">▾</span></div><div class="pyr-body">В Україні ОВДП дають 14–17% річних, гарантовані державою. У світі — 4–6%. <strong>База</strong> консервативного портфеля. Захист від волатильності. Ліквідні, передбачувані.</div></div>
+          <div class="pyr-item" onclick="pyrToggle(this)"><div class="pyr-head"><span class="pyr-head-icon">📊</span><span class="pyr-head-title">Акції / ETF — середній/високий ризик</span><span class="pyr-head-arrow">▾</span></div><div class="pyr-body">S&P500 ETF: середня дохідність <strong>10% річних за 100 років</strong>. Волатильність ±30% на рік. Горизонт мінімум 5–7 років. Найефективніший інструмент для довгострокового накопичення.</div></div>
+          <div class="pyr-item" onclick="pyrToggle(this)"><div class="pyr-head"><span class="pyr-head-icon">🏠</span><span class="pyr-head-title">Нерухомість / REIT</span><span class="pyr-head-arrow">▾</span></div><div class="pyr-body">Захист від інфляції, орендний дохід. REIT (фонди нерухомості) — вхід від $10, дивіденди 4–8%. Низька ліквідність фізичної нерухомості, але довгострокова стабільність.</div></div>
+          <div class="pyr-item" onclick="pyrToggle(this)"><div class="pyr-head"><span class="pyr-head-icon">🔷</span><span class="pyr-head-title">Цифрові активи / Bitbon</span><span class="pyr-head-arrow">▾</span></div><div class="pyr-body">Bitbon — <strong>не спекулятивна крипта</strong>. Похідний фінансовий інструмент, підкріплений реальними активами Simcord. Contributing — аудит кожного проекту. Частка в портфелі: 5–20% залежно від вашого ризик-профілю.</div></div>
+        </div>
+        <div class="insight"><div class="insight-tag">Правило розподілу за віком</div><p>% облігацій = ваш вік. У 25 → 25% облігацій + 75% акцій. У 50 → 50/50. Логіка: молоді можуть пережити волатильність — їм важливіший ріст. Старшим — стабільність важливіша.</p></div>
+      `
+                    },
+                    {
+                        title: "DCA і диверсифікація",
+                        xp: 80,
+                        videoUrl: "YOUR_YOUTUBE_URL_11",
+                        videoDuration: "10–12 хв",
+                        videoTitle: "Урок 11: DCA на практиці — як я купую активи щомісяця незалежно від ринку",
+                        content: `
+        <div class="theory-block">
+          <div class="theory-h2">Dollar Cost Averaging — стратегія розумних</div>
+          <p class="theory-p">DCA: <strong>купувати фіксовану суму щомісяця незалежно від ціни</strong>. Коли ціна висока — купуєте менше одиниць. Коли низька — більше. Усереднює ціну входу і знімає необхідність "вгадувати ринок".</p>
+          <div class="formula"><div class="formula-main">Фіксована сума щомісяця = сила звички</div><div class="formula-sub">Не намагайтесь вгадати дно · Не намагайтесь вгадати пік · Просто купуйте регулярно</div></div>
+          <div class="insight"><div class="insight-tag">Нобелівська премія з економіки</div><p>Гаррі Марковіц довів математично: <strong>правильний розподіл активів знижує ризик без зниження дохідності</strong>. Це єдиний "безкоштовний обід" в інвестуванні. Диверсифікація — не страховка від втрат, а управління ризиком.</p></div>
+        </div>
+        <div class="quiz-block">
+          <div class="quiz-q">Яка максимальна рекомендована частка одного активу в збалансованому портфелі?</div>
+          <div class="quiz-opts">
+            <button class="q-opt" onclick="quiz(this,false,'Занадто консервативно — обмежує потенціал зростання і ускладнює управління портфелем.')">5% — чим менше тим краще</button>
+            <button class="q-opt" onclick="quiz(this,true,'Правильно! 20% — одна невдача не руйнує портфель, але вклад у загальну дохідність суттєвий.')">20% — золота середина для окремого активу</button>
+            <button class="q-opt" onclick="quiz(this,false,'Занадто багато — одна невдача знищить значну частину капіталу.')">50% — якщо дуже вірите в актив</button>
+          </div>
+          <div class="quiz-fb"></div>
+        </div>
+        <div class="homework">
+          <div class="hw-header"><div class="hw-icon">📝</div><div><div class="hw-title">Домашнє завдання</div><div class="hw-subtitle">Ваш перший портфель</div></div></div>
+          <div class="hw-task">Складіть <strong>свій ідеальний портфель</strong> враховуючи вік, дохід і горизонт. Розпишіть: які класи активів, яка частка кожного і чому. Яка ваша DCA-сума на місяць?</div>
+          <textarea class="hw-textarea" placeholder="Мій вік: ...  Горизонт: ... років&#10;&#10;ОВДП: ...%&#10;ETF (акції): ...%&#10;Нерухомість/REIT: ...%&#10;Bitbon: ...%&#10;&#10;DCA сума: ... грн/міс&#10;Чому такий розподіл: ..."></textarea>
+          <button class="hw-submit" onclick="saveHW(this)">Зберегти ✓</button>
+        </div>
+      `
+                    }
+                ]
+            },
+            {
+                id: 4, emoji: "🔷", color: "#1d4ed8", title: "Система Bitbon",
+                desc: "Протокол · Contributing · Meta-активи · Стратегія входу",
+                totalXP: 340,
+                steps: [
+                    {
+                        title: "Bitbon — що це насправді",
+                        xp: 85,
+                        videoUrl: "YOUR_YOUTUBE_URL_12",
+                        videoDuration: "15–20 хв",
+                        videoTitle: "Урок 12: Чому я обрав Bitbon — демонстрація платформи зсередини",
+                        content: `
+        <div class="theory-block">
+          <div class="theory-h2">Bitbon ≠ Bitcoin. Ось фундаментальна різниця</div>
+          <p class="theory-p">Bitcoin нічим не забезпечений — його цінність тримається на колективній довірі. <strong>Bitbon — похідний фінансовий інструмент</strong>, забезпечений нематеріальними активами компанії Simcord, зафіксованими в офіційному інвентарному паспорті.</p>
+        </div>
+        <div class="pyramid">
+          <div class="pyr-item open" onclick="pyrToggle(this)"><div class="pyr-head"><span class="pyr-head-icon">🏗️</span><span class="pyr-head-title">Simcord — розробник і фундамент</span><span class="pyr-head-arrow">▾</span></div><div class="pyr-body">Компанія з 2015 року. CEO Олександр Кудь. Розробляє програмне забезпечення та інфраструктуру. Активи компанії — забезпечення Bitbon. Публічний інвентарний паспорт доступний усім.</div></div>
+          <div class="pyr-item" onclick="pyrToggle(this)"><div class="pyr-head"><span class="pyr-head-icon">🔷</span><span class="pyr-head-title">Bitbon — цифровий актив нового покоління</span><span class="pyr-head-arrow">▾</span></div><div class="pyr-body">Похідний інструмент від реальних активів. Використовується в системі як розрахунковий засіб та інструмент участі в Contributing. Це <strong>не крипто-спекуляція</strong> — це токенізована частка в реальній вартості.</div></div>
+          <div class="pyr-item" onclick="pyrToggle(this)"><div class="pyr-head"><span class="pyr-head-icon">💼</span><span class="pyr-head-title">Contributing — новий тип інвестування</span><span class="pyr-head-arrow">▾</span></div><div class="pyr-body">Схоже на краудінвестинг, але з <strong>обов'язковим аудитом кожного проекту</strong>. Публічний контракт — юридично зобов'язуючий документ. Projectbon = частка у прибутку конкретного проекту.</div></div>
+          <div class="pyr-item" onclick="pyrToggle(this)"><div class="pyr-head"><span class="pyr-head-icon">🏛️</span><span class="pyr-head-title">Meta-активи та токенізація прав</span><span class="pyr-head-arrow">▾</span></div><div class="pyr-body">Токенізація прав на нерухомість, авторські права, результати роботи. Дозволяє дробити та торгувати правами власності на будь-які активи в рамках чинного законодавства.</div></div>
+        </div>
+        <div class="quiz-block">
+          <div class="quiz-q">Чим Bitbon принципово відрізняється від Bitcoin за своєю природою?</div>
+          <div class="quiz-opts">
+            <button class="q-opt" onclick="quiz(this,false,'Технологія блокчейн використовується обома, але принципова різниця не в технології.')">Bitbon використовує кращу технологію блокчейн</button>
+            <button class="q-opt" onclick="quiz(this,true,'Правильно! Bitbon — похідний від реальних активів компанії. Bitcoin — чиста спекулятивна вартість без матеріального забезпечення.')">Bitbon забезпечений реальними активами компанії Simcord</button>
+            <button class="q-opt" onclick="quiz(this,false,'Bitbon не є конкурентом Bitcoin — вони вирішують принципово різні завдання.')">Bitbon — це дешевша альтернатива Bitcoin</button>
+          </div>
+          <div class="quiz-fb"></div>
+        </div>
+      `
+                    },
+                    {
+                        title: "Публічний контракт і юридична база",
+                        xp: 80,
+                        videoUrl: "YOUR_YOUTUBE_URL_13",
+                        videoDuration: "12–15 хв",
+                        videoTitle: "Урок 13: Читаємо Публічний контракт — що це означає для вас",
+                        content: `
+        <div class="theory-block">
+          <div class="theory-h2">Юридична база — не whitepaper без зобов'язань</div>
+          <p class="theory-p"><strong>Публічний контракт Системи Bitbon</strong> — основоположний документ. Визначає права, обов'язки та механізми для всіх учасників. Це публічна оферта, а не маркетингові обіцянки.</p>
+          <div class="insight"><div class="insight-tag">Інвентарний паспорт</div><p>Офіційний документ, що підтверджує нематеріальні активи Simcord. <strong>Публічно доступний</strong>. Підтверджує юридичну природу Bitbon як похідного від реального майна — а не "повітряного" токена.</p></div>
+        </div>
+        <ul class="task-list" id="tl-m4s1">
+          <li class="task-item" onclick="taskDone(this,20)"><span class="task-check"></span><span class="task-text">Прочитати Публічний контракт Системи Bitbon на bitbon.space</span></li>
+          <li class="task-item" onclick="taskDone(this,20)"><span class="task-check"></span><span class="task-text">Переглянути виписку з інвентарного паспорта активів Simcord</span></li>
+          <li class="task-item" onclick="taskDone(this,20)"><span class="task-check"></span><span class="task-text">Вивчити Дорожню карту децентралізації системи</span></li>
+          <li class="task-item" onclick="taskDone(this,20)"><span class="task-check"></span><span class="task-text">Ознайомитись з Протоколом Bitbon та механікою похідності активу</span></li>
+          <li class="task-item" onclick="taskDone(this,20)"><span class="task-check"></span><span class="task-text">Зрозуміти механіку Капіталізаційного Фонду Bitbon</span></li>
+        </ul>
+        <div class="warn"><p>⚡ <strong>Золоте правило входу:</strong> Вкладайте у Bitbon лише ту суму, яку готові не чіпати мінімум 3 роки. Ліквідність системи зростає з розвитком екосистеми — плануйте довгостроково.</p></div>
+      `
+                    },
+                    {
+                        title: "Bitbon у вашому портфелі",
+                        xp: 90,
+                        videoUrl: "YOUR_YOUTUBE_URL_14",
+                        videoDuration: "18–22 хв",
+                        videoTitle: "Урок 14: Мій перший Contributing — що я вибрав, скільки вклав і які результати",
+                        content: `
+        <div class="theory-block">
+          <div class="theory-h2">Стратегічне місце в диверсифікованому портфелі</div>
+          <p class="theory-p">Contributing у Bitbon System — <strong>альтернативний клас активів</strong> з унікальними властивостями: токенізовані права, публічний контракт, аудит проектів. Не замінник традиційних інвестицій — доповнення.</p>
+        </div>
+        <div class="calc-box">
+          <div class="calc-title">🔷 Розподіл інвестиційного бюджету</div>
+          <div class="calc-row"><span class="calc-lbl">Інвестиційний бюджет/міс (грн)</span><input type="range" min="1000" max="200000" step="1000" value="10000" oninput="calcPortfolio(this.value)"><span class="calc-num" id="port-val">10 000</span></div>
+          <div class="calc-outputs" style="grid-template-columns:1fr 1fr 1fr 1fr;display:grid;gap:8px;margin-top:14px">
+            <div class="calc-out"><div class="co-val" id="port-bonds">3 000</div><div class="co-lbl">🏛️ ОВДП 30%</div></div>
+            <div class="calc-out accent"><div class="co-val" id="port-etf">4 000</div><div class="co-lbl">📊 ETF 40%</div></div>
+            <div class="calc-out gold"><div class="co-val" id="port-re">1 500</div><div class="co-lbl">🏠 REIT 15%</div></div>
+            <div class="calc-out purple"><div class="co-val" id="port-bb">1 500</div><div class="co-lbl">🔷 Bitbon 15%</div></div>
+          </div>
+        </div>
+        <div class="scenario-box">
+          <div class="scenario-story"><strong>Запитання:</strong> У вас є 100 000 грн для інвестицій. Як розподілити між ОВДП, ETF та Bitbon?</div>
+          <div class="scenario-q">Оберіть найрозумнішу стратегію:</div>
+          <div class="sc-opts" id="sc-m4s2">
+            <button class="sc-opt" onclick="scenario('sc-m4s2',this,false,'❌ 100% у будь-який один актив — пряме порушення диверсифікації. Навіть найнадійніший актив несе ризики.')">100% у Bitbon — вірю в екосистему повністю</button>
+            <button class="sc-opt" onclick="scenario('sc-m4s2',this,true,'✅ Чудова диверсифікація! ОВДП — стабільність і ліквідність, ETF — довгостроковий ріст, Bitbon — новий клас активів з потенціалом.')">40% ОВДП + 45% ETF + 15% Bitbon</button>
+            <button class="sc-opt" onclick="scenario('sc-m4s2',this,false,'⚠️ Занадто консервативно для довгострокового горизонту. ОВДП надійні, але ви пропускаєте весь потенціал зростання.')">100% ОВДП — найнадійніше і найспокійніше</button>
+          </div>
+          <div class="sc-result" id="sc-m4s2-res"></div>
+        </div>
+        <div class="homework">
+          <div class="hw-header"><div class="hw-icon">📝</div><div><div class="hw-title">Домашнє завдання</div><div class="hw-subtitle">Ваша Bitbon-стратегія</div></div></div>
+          <div class="hw-task">Зареєструйтесь на bitbon.space та <strong>дослідіть один реальний проект</strong> для Contributing. Опишіть: що це за проект, яка його модель, що аудит каже про нього, і чи готові ви брати участь.</div>
+          <textarea class="hw-textarea" placeholder="Проект: ...&#10;Опис бізнес-моделі: ...&#10;Результати аудиту: ...&#10;Мій висновок: готовий / не готовий&#10;Чому: ..."></textarea>
+          <button class="hw-submit" onclick="saveHW(this)">Зберегти ✓</button>
+        </div>
+      `
+                    }
+                ]
+            },
+            {
+                id: 5, emoji: "🚀", color: "#065f46", title: "Бізнес-мислення",
+                desc: "Квадрант Кійосакі · Активи vs зобов'язання · 5 джерел доходу",
+                totalXP: 280,
+                steps: [
+                    {
+                        title: "Активи, зобов'язання, квадрант",
+                        xp: 90,
+                        videoUrl: "YOUR_YOUTUBE_URL_15",
+                        videoDuration: "12–15 хв",
+                        videoTitle: "Урок 15: Мій шлях від найманого до інвестора — квадрант Кійосакі на практиці",
+                        content: `
+        <div class="theory-block">
+          <div class="theory-h2">Єдина різниця між багатими і бідними</div>
+          <p class="theory-p">Кійосакі: <em>"Багаті купують активи. Бідні купують зобов'язання і думають, що це активи."</em> Актив кладе гроші у вашу кишеню. Зобов'язання — виймає.</p>
+          <div class="flipgrid">
+            <div class="flipcard" onclick="this.classList.toggle('flipped')"><div class="flipcard-inner"><div class="flipcard-front"><div class="flip-icon">💰</div><div class="flip-title">Актив</div><div class="flip-sub">Кладе гроші до вас</div></div><div class="flipcard-back"><div class="flip-answer">Акції (дивіденди), нерухомість в оренду, бізнес із менеджером, авторські права, Bitbon Contributing. Приносить дохід без вашої щоденної участі.</div></div></div></div>
+            <div class="flipcard" onclick="this.classList.toggle('flipped')"><div class="flipcard-inner"><div class="flipcard-front"><div class="flip-icon">💸</div><div class="flip-title">Зобов'язання</div><div class="flip-sub">Виймає гроші від вас</div></div><div class="flipcard-back"><div class="flip-answer">Власна квартира де ви живете, авто в кредит, кредитна картка. Більшість людей купують зобов'язання, думаючи що купують активи.</div></div></div></div>
+          </div>
+          <div class="insight"><div class="insight-tag">Квадрант грошових потоків</div><p><strong>Е (найманий) → С (самозайнятий) → Б (власник системи) → І (інвестор).</strong> Мета — рухатись праворуч. Не обов'язково кидати роботу — можна будувати паралельно.</p></div>
+        </div>
+        <div class="quiz-block">
+          <div class="quiz-q">Власна квартира, в якій ви живете — це актив чи зобов'язання за Кійосакі?</div>
+          <div class="quiz-opts">
+            <button class="q-opt" onclick="quiz(this,false,'За Кійосакі — ні. Квартира де ви живете не генерує дохід і вимагає постійних витрат.')">Актив — вона зростає в ціні</button>
+            <button class="q-opt" onclick="quiz(this,true,'Правильно! Кійосакі: квартира де ви живете — зобов\'язання. Вимагає комунальних і ремонтів, не генерує дохід. Актив — квартира в оренді.')">Зобов'язання — забирає гроші щомісяця</button>
+            <button class="q-opt" onclick="quiz(this,false,'Залежить від грошового потоку. Якщо квартира не генерує дохід — це зобов\'язання.')">Залежить від ситуації на ринку</button>
+          </div>
+          <div class="quiz-fb"></div>
+        </div>
+      `
+                    },
+                    {
+                        title: "5 джерел доходу",
+                        xp: 90,
+                        videoUrl: "YOUR_YOUTUBE_URL_16",
+                        videoDuration: "14–16 хв",
+                        videoTitle: "Урок 16: Мої 5 джерел доходу сьогодні — що будував і скільки часу це зайняло",
+                        content: `
+        <div class="theory-block">
+          <div class="theory-h2">Одне джерело — вразливість. П'ять — свобода</div>
+          <p class="theory-p">Дослідження IRS: <strong>середній мільярдер має 7 джерел доходу</strong>. Кожне нове джерело — фінансова страховка і прискорення до свободи.</p>
+        </div>
+        <div class="pyramid">
+          <div class="pyr-item open" onclick="pyrToggle(this)"><div class="pyr-head"><span class="pyr-head-icon">1️⃣</span><span class="pyr-head-title">Основний дохід — база</span><span class="pyr-head-arrow">▾</span></div><div class="pyr-body">Робота, фриланс, підприємництво. Стабільна основа звідки починаються заощадження. <strong>Ціль:</strong> підвищити в 2–3 рази через розвиток навичок і ринкової цінності.</div></div>
+          <div class="pyr-item" onclick="pyrToggle(this)"><div class="pyr-head"><span class="pyr-head-icon">2️⃣</span><span class="pyr-head-title">Монетизований навик</span><span class="pyr-head-arrow">▾</span></div><div class="pyr-body">Консультації, навчання, менторство. Якщо ви щось вмієте добре — є люди готові платити. Ставка зростає з репутацією. Легко масштабується у курс або продукт.</div></div>
+          <div class="pyr-item" onclick="pyrToggle(this)"><div class="pyr-head"><span class="pyr-head-icon">3️⃣</span><span class="pyr-head-title">Інвестиційний дохід</span><span class="pyr-head-arrow">▾</span></div><div class="pyr-body">Дивіденди, відсотки, зростання капіталу. Формується повільно але нарощується за законом складного відсотка. <strong>Ключ — час і регулярність.</strong> Найкраще дерево яке ви можете посадити сьогодні.</div></div>
+          <div class="pyr-item" onclick="pyrToggle(this)"><div class="pyr-head"><span class="pyr-head-icon">4️⃣</span><span class="pyr-head-title">Bitbon Contributing</span><span class="pyr-head-arrow">▾</span></div><div class="pyr-body">Пасивний дохід від участі в проектах Bitbon System. Новий клас активів нової економіки. Аудит проектів забезпечує прозорість — ви знаєте куди йдуть кошти.</div></div>
+          <div class="pyr-item" onclick="pyrToggle(this)"><div class="pyr-head"><span class="pyr-head-icon">5️⃣</span><span class="pyr-head-title">Масштабований продукт</span><span class="pyr-head-arrow">▾</span></div><div class="pyr-body">Курс, книга, SaaS, мікробізнес. Продається без вашої щоденної участі. <strong>Найскладніше створити, найцінніше мати.</strong> Ваш час більше не обмежує ваш дохід.</div></div>
+        </div>
+        <ul class="task-list" id="tl-m5s1">
+          <li class="task-item" onclick="taskDone(this,15)"><span class="task-check"></span><span class="task-text">Я визначив свій головний навик за який ринок платить найбільше</span></li>
+          <li class="task-item" onclick="taskDone(this,15)"><span class="task-check"></span><span class="task-text">Я написав ідею свого першого джерела пасивного доходу</span></li>
+          <li class="task-item" onclick="taskDone(this,15)"><span class="task-check"></span><span class="task-text">Я дослідив Contributing у Bitbon System як 4-е джерело</span></li>
+        </ul>
+        <div class="homework">
+          <div class="hw-header"><div class="hw-icon">📝</div><div><div class="hw-title">Домашнє завдання</div><div class="hw-subtitle">Карта ваших джерел доходу</div></div></div>
+          <div class="hw-task">Намалюйте <strong>вашу поточну картину</strong> і <strong>цільову картину через 5 років</strong>. Які 5 джерел доходу у вас будуть? З чого почнете будувати наступного тижня?</div>
+          <textarea class="hw-textarea" placeholder="Зараз (джерела доходу): ...&#10;&#10;Через 5 років хочу мати:&#10;1. ...&#10;2. ...&#10;3. ...&#10;4. ...&#10;5. ...&#10;&#10;Першочергова дія наступного тижня: ..."></textarea>
+          <button class="hw-submit" onclick="saveHW(this)">Зберегти ✓</button>
+        </div>
+      `
+                    }
+                ]
+            },
+            {
+                id: 6, emoji: "🎯", color: "#7c3aed", title: "Ваша стратегія на все життя",
+                desc: "Персональний план · 90-денний старт · Фінансова свобода",
+                totalXP: 380,
+                steps: [
+                    {
+                        title: "Персональний фінансовий план",
+                        xp: 100,
+                        videoUrl: "YOUR_YOUTUBE_URL_17",
+                        videoDuration: "18–22 хв",
+                        videoTitle: "Урок 17: Складаємо ваш план разом — live-сесія з калькулятором",
+                        content: `
+        <div class="theory-block">
+          <div class="theory-h2">Стратегія — це міст між вашим сьогодні і вашим майбутнім</div>
+          <p class="theory-p">Баффет: <em>"Хтось сидить у тіні сьогодні, тому що хтось посадив дерево давно."</em> Ваш персональний план — це ваше дерево. Час його садити.</p>
+        </div>
+        <div class="calc-box">
+          <div class="calc-title">🎯 Ваш фінансовий план</div>
+          <div class="calc-row"><span class="calc-lbl">Місячний дохід (грн)</span><input type="range" min="10000" max="1000000" step="5000" value="60000" oninput="calcStrategy()"><span class="calc-num" id="strat-inc">60 000</span></div>
+          <div class="calc-row"><span class="calc-lbl">Заощадження зараз (%)</span><input type="range" min="0" max="60" step="1" value="10" oninput="calcStrategy()"><span class="calc-num" id="strat-save">10%</span></div>
+          <div class="calc-row"><span class="calc-lbl">Ваш вік</span><input type="range" min="18" max="65" step="1" value="30" oninput="calcStrategy()"><span class="calc-num" id="strat-age">30</span></div>
+          <div class="calc-row"><span class="calc-lbl">Ціль: років до свободи</span><input type="range" min="5" max="40" step="1" value="15" oninput="calcStrategy()"><span class="calc-num" id="strat-goal">15</span></div>
+          <div class="calc-outputs" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px">
+            <div class="calc-out green"><div class="co-val" id="strat-mo">6 000</div><div class="co-lbl">Заощаджень/міс</div></div>
+            <div class="calc-out gold"><div class="co-val" id="strat-stocks">70%</div><div class="co-lbl">Частка акцій</div></div>
+            <div class="calc-out accent"><div class="co-val" id="strat-cap">12 400 000</div><div class="co-lbl">Капітал за ціль</div></div>
+          </div>
+        </div>
+        <div class="insight"><div class="insight-tag">FIRE — Фінансова незалежність</div><p>Financial Independence, Retire Early: капітал = ваші річні витрати × 25. При 4% щорічного вилучення капітал не виснажується. При 60 000 грн/міс витрат: 60 000 × 12 × 25 = <strong>18 000 000 грн</strong>.</p></div>
+      `
+                    },
+                    {
+                        title: "90-денний план дій",
+                        xp: 120,
+                        videoUrl: "YOUR_YOUTUBE_URL_18",
+                        videoDuration: "15–18 хв",
+                        videoTitle: "Урок 18: Ваші перші 90 днів — конкретні кроки і як я вас підтримаю",
+                        content: `
+        <div class="theory-block">
+          <div class="theory-h2">Конкретні дії — не абстрактні цілі</div>
+          <p class="theory-p">University of Scranton: <strong>92% людей не досягають фінансових цілей</strong> через відсутність конкретного плану. Ось ваші 90 днів.</p>
+          <div class="theory-h3">Тиждень 1 — Діагностика та фундамент</div>
+        </div>
+        <ul class="task-list" id="tl-m6s1a">
+          <li class="task-item" onclick="taskDone(this,20)"><span class="task-check"></span><span class="task-text">Підрахувати всі витрати за 3 місяці по категоріях — чесно і точно</span></li>
+          <li class="task-item" onclick="taskDone(this,20)"><span class="task-check"></span><span class="task-text">Виписати всі борги з сумами і відсотковими ставками</span></li>
+          <li class="task-item" onclick="taskDone(this,20)"><span class="task-check"></span><span class="task-text">Визначити реальний відсоток поточних заощаджень від доходу</span></li>
+        </ul>
+        <div class="theory-block"><div class="theory-h3">Тижні 2–4 — Будуємо фундамент</div></div>
+        <ul class="task-list" id="tl-m6s1b">
+          <li class="task-item" onclick="taskDone(this,20)"><span class="task-check"></span><span class="task-text">Відкрити окремий рахунок "Подушка безпеки" і почати наповнювати</span></li>
+          <li class="task-item" onclick="taskDone(this,20)"><span class="task-check"></span><span class="task-text">Налаштувати автоматичне відкладання % в день зарплати — назавжди</span></li>
+          <li class="task-item" onclick="taskDone(this,20)"><span class="task-check"></span><span class="task-text">Купити перші ОВДП або відкрити депозит — перший реальний актив</span></li>
+        </ul>
+        <div class="theory-block"><div class="theory-h3">Місяці 2–3 — Запускаємо систему</div></div>
+        <ul class="task-list" id="tl-m6s1c">
+          <li class="task-item" onclick="taskDone(this,25)"><span class="task-check"></span><span class="task-text">Відкрити брокерський рахунок і купити перший ETF (навіть $10)</span></li>
+          <li class="task-item" onclick="taskDone(this,25)"><span class="task-check"></span><span class="task-text">Зареєструватись на bitbon.space і дослідити перший Contributing-проект</span></li>
+          <li class="task-item" onclick="taskDone(this,25)"><span class="task-check"></span><span class="task-text">Переглянути план через 90 днів — що вийшло, що ні, скоригувати</span></li>
+        </ul>
+        <div class="homework">
+          <div class="hw-header"><div class="hw-icon">🎯</div><div><div class="hw-title">Фінальне завдання курсу</div><div class="hw-subtitle">Ваша особиста фінансова стратегія</div></div></div>
+          <div class="hw-task">Напишіть <strong>вашу повну фінансову стратегію на наступні 10 років</strong>: поточна ситуація, конкретні цілі, розподіл активів, джерела доходу, роль Bitbon у портфелі, і перші 3 дії вже цього тижня.</div>
+          <textarea class="hw-textarea" style="min-height:160px" placeholder="МОЯ ФІНАНСОВА СТРАТЕГІЯ&#10;&#10;Поточна ситуація: ...&#10;&#10;Ціль через 10 років: ...&#10;&#10;Мій розподіл активів: ...&#10;&#10;Роль Bitbon: ...&#10;&#10;5 джерел доходу які будую: ...&#10;&#10;Перші 3 дії цього тижня:&#10;1. ...&#10;2. ...&#10;3. ..."></textarea>
+          <button class="hw-submit" onclick="saveHW(this)">Зберегти стратегію ✓</button>
+        </div>
+      `
+                    }
+                ]
+            }
+        ];
+
+        // ============================================================
+        // STATE
+        // ============================================================
+        let state = {
+            xp: 0,
+            completedModules: [],
+            completedSteps: {},
+            activeModule: -1,
+            activeSteps: {},
+            completedTasks: 0
+        };
+
+        // ============================================================
+        // XP SYSTEM
+        // ============================================================
+        function addXP(amt, label) {
+            state.xp += amt;
+            state.completedTasks++;
+            updateXPUI();
+            showToast(amt, label);
+        }
+
+        function showToast(amt, label) {
+            const t = document.getElementById('xp-toast');
+            document.getElementById('toast-xp').textContent = amt;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        }
+
+        function updateXPUI() {
+            document.getElementById('total-xp').textContent = fmt(state.xp);
+            document.getElementById('s-xp').textContent = fmt(state.xp);
+            document.getElementById('s-tasks').textContent = state.completedTasks;
+            document.getElementById('s-modules').textContent = state.completedModules.length + '/7';
+
+            let lvl = LEVELS[0], idx = 0;
+            for (let i = 0; i < LEVELS.length; i++) {
+                if (state.xp >= LEVELS[i].min) { lvl = LEVELS[i]; idx = i; }
+            }
+            const nxt = LEVELS[idx + 1] || { min: 99999 };
+            const pct = Math.min(100, Math.round((state.xp - lvl.min) / (nxt.min - lvl.min) * 100));
+            document.getElementById('xp-fill').style.width = pct + '%';
+            document.getElementById('level-name').textContent = 'Рівень ' + (idx + 1) + ' — ' + lvl.name;
+            document.getElementById('xp-cur').textContent = fmt(state.xp);
+            document.getElementById('xp-max').textContent = fmt(nxt.min);
+        }
+
+        // ============================================================
+        // RENDER MODULES
+        // ============================================================
+        function renderModules() {
+            const c = document.getElementById('modules-container');
+            c.innerHTML = '';
+            MODULES.forEach((m, mi) => {
+                const done = state.completedModules.includes(mi);
+                const stDone = (state.completedSteps[mi] || new Set()).size;
+                const stTotal = m.steps.length;
+                const pct = stTotal > 0 ? Math.round(stDone / stTotal * 100) : 0;
+                const isOpen = state.activeModule === mi;
+                const locked = mi > 0 && !state.completedModules.includes(mi - 1) && stDone === 0;
+
+                const block = document.createElement('div');
+                block.className = 'module-block' + (isOpen ? ' is-open' : '') + (done ? ' is-done' : '');
+                block.id = 'mod-' + mi;
+
+                block.innerHTML = `
+      <div class="module-header" onclick="toggleModule(${mi})">
+        <div class="mod-ico" style="background:${m.color}22">
+          ${m.emoji}
+          ${done ? '<span class="mod-done-badge">✓</span>' : ''}
+        </div>
+        <div class="mod-info">
+          <div class="mod-num">Модуль ${String(mi + 1).padStart(2, '0')}</div>
+          <div class="mod-name">${m.title}</div>
+          <div class="mod-desc">${m.desc}</div>
+        </div>
+        <div class="mod-right">
+          <span class="mod-xp-badge">+${m.totalXP} XP</span>
+          <div class="mod-progress">
+            <div class="mod-prog-bar"><div class="mod-prog-fill" style="width:${pct}%"></div></div>
+            <span class="mod-prog-txt">${stDone}/${stTotal}</span>
+          </div>
+        </div>
+        <span class="mod-chevron">▾</span>
+      </div>
+      <div class="lesson-body">
+        ${locked ? renderLocked() : renderLessonTabs(m, mi)}
+      </div>
+    `;
+                c.appendChild(block);
+            });
+        }
+
+        function renderLocked() {
+            return `<div class="locked-msg"><div class="locked-icon">🔒</div><div class="locked-text">Завершіть попередній модуль, щоб розблокувати цей</div></div>`;
+        }
+
+        function renderLessonTabs(m, mi) {
+            const doneSet = state.completedSteps[mi] || new Set();
+            const cur = state.activeSteps[mi] || 0;
+            const tabs = m.steps.map((s, si) =>
+                `<button class="ltab${cur === si ? ' active' : ''}${doneSet.has(si) ? ' done' : ''}" onclick="goStep(${mi},${si})">${s.title}</button>`
+            ).join('');
+
+            const panels = m.steps.map((s, si) => `
+    <div class="step-panel${cur === si ? ' active' : ''}" id="panel-${mi}-${si}">
+      ${renderVideoBlock(s)}
+      <div class="theory-content">${s.content}</div>
+      <div class="step-nav-row">
+        <button class="btn-prev-step" onclick="goPrevStep(${mi})" ${cur === 0 ? 'disabled style="opacity:.3"' : ''}>← Назад</button>
+        <div class="step-dots">${m.steps.map((_, i) => `<div class="step-dot${i === cur ? ' active' : ''}${doneSet.has(i) ? ' done' : ''}"></div>`).join('')}</div>
+        <button class="btn-next-step${cur === m.steps.length - 1 ? ' finish' : ''}" onclick="advStep(${mi})">
+          ${cur === m.steps.length - 1 ? 'Завершити модуль ✓' : 'Далі →'}
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+            return `
+    <div class="lesson-tabs" id="tabs-${mi}">${tabs}</div>
+    <div class="lesson-content" id="content-${mi}">${panels}</div>
+  `;
+        }
+
+        function renderVideoBlock(s) {
+            const hasUrl = s.videoUrl && s.videoUrl !== 'YOUR_YOUTUBE_URL_1' && !s.videoUrl.startsWith('YOUR_');
+            return `
+    <div class="video-block">
+      <div class="video-label">${s.videoTitle}</div>
+      <div class="video-frame">
+        ${hasUrl
+                    ? `<iframe src="${embedYT(s.videoUrl)}" allowfullscreen></iframe>`
+                    : `<div class="video-placeholder">
+              <div class="vp-icon">▶</div>
+              <div class="vp-text">Відео буде додано після зйомки</div>
+              <div class="vp-url">Вставте YouTube посилання у код замість: ${s.videoUrl}</div>
+            </div>`
+                }
+      </div>
+      <div class="video-duration">⏱ Тривалість: ${s.videoDuration}</div>
+    </div>
+  `;
+        }
+
+        function embedYT(url) {
+            const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
+            return m ? `https://www.youtube.com/embed/${m[1]}` : url;
+        }
+
+        // ============================================================
+        // NAVIGATION
+        // ============================================================
+        function toggleModule(mi) {
+            if (state.activeModule === mi) {
+                state.activeModule = -1;
+            } else {
+                state.activeModule = mi;
+                if (!state.activeSteps[mi]) state.activeSteps[mi] = 0;
+            }
+            renderModules();
+            if (state.activeModule === mi) {
+                setTimeout(() => {
+                    const el = document.getElementById('mod-' + mi);
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 80);
+            }
+        }
+
+        function goStep(mi, si) {
+            state.activeSteps[mi] = si;
+            renderModules();
+        }
+
+        function goPrevStep(mi) {
+            const cur = state.activeSteps[mi] || 0;
+            if (cur > 0) { state.activeSteps[mi] = cur - 1; renderModules(); }
+        }
+
+        function advStep(mi) {
+            const m = MODULES[mi];
+            const cur = state.activeSteps[mi] || 0;
+            if (!state.completedSteps[mi]) state.completedSteps[mi] = new Set();
+            if (!state.completedSteps[mi].has(cur)) {
+                state.completedSteps[mi].add(cur);
+                addXP(m.steps[cur].xp, 'крок пройдено!');
+            }
+            if (cur < m.steps.length - 1) {
+                state.activeSteps[mi] = cur + 1;
+                renderModules();
+                setTimeout(() => {
+                    const el = document.getElementById('mod-' + mi);
+                    if (el) el.querySelector('.lesson-body').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 80);
+            } else {
+                if (!state.completedModules.includes(mi)) {
+                    state.completedModules.push(mi);
+                    addXP(50, `Модуль "${m.title}" завершено! 🎉`);
+                    updateXPUI();
+                }
+                state.activeModule = -1;
+                renderModules();
+                if (state.completedModules.length === 7) {
+                    setTimeout(() => {
+                        document.getElementById('community-block').classList.add('visible');
+                        document.getElementById('community-block').scrollIntoView({ behavior: 'smooth' });
+                    }, 600);
+                }
+            }
+        }
+
+        // ============================================================
+        // INTERACTIVE HELPERS
+        // ============================================================
+        function pyrToggle(el) {
+            const isOpen = el.classList.contains('open');
+            el.closest('.pyramid').querySelectorAll('.pyr-item').forEach(i => i.classList.remove('open'));
+            if (!isOpen) el.classList.add('open');
+        }
+
+        function taskDone(el, xpAmt) {
+            if (el.classList.contains('done')) return;
+            el.classList.add('done');
+            el.querySelector('.task-check').textContent = '✓';
+            addXP(xpAmt, 'завдання виконано');
+        }
+
+        function quiz(btn, correct, msg) {
+            const opts = btn.closest('.quiz-block').querySelectorAll('.q-opt');
+            opts.forEach(o => o.disabled = true);
+            btn.classList.add(correct ? 'correct' : 'wrong');
+            const fb = btn.closest('.quiz-block').querySelector('.quiz-fb');
+            if (fb) { fb.className = 'quiz-fb ' + (correct ? 'ok' : 'err'); fb.textContent = msg; }
+            if (correct) addXP(15, 'правильна відповідь!');
+        }
+
+        function scenario(id, btn, good, msg) {
+            const wrap = document.getElementById(id);
+            if (!wrap) return;
+            wrap.querySelectorAll('.sc-opt').forEach(o => o.disabled = true);
+            btn.classList.add(good ? 'good' : 'bad');
+            const res = document.getElementById(id + '-res');
+            if (res) { res.className = 'sc-result show ' + (good ? 'ok' : 'err'); res.textContent = msg; }
+            if (good) addXP(20, 'вірне рішення!');
+        }
+
+        function saveHW(btn) {
+            const ta = btn.previousElementSibling;
+            if (ta && ta.value.trim().length > 10) {
+                btn.textContent = '✓ Збережено!';
+                btn.disabled = true;
+                btn.style.background = '#059669';
+                addXP(30, 'домашнє завдання здано!');
+            } else {
+                btn.style.background = '#dc2626';
+                btn.textContent = 'Напишіть детальніше...';
+                setTimeout(() => { btn.style.background = ''; btn.textContent = 'Зберегти ✓'; }, 2000);
+            }
+        }
+
+        // ============================================================
+        // CALCULATORS
+        // ============================================================
+        function calcBudget(v) {
+            const n = parseInt(v) || 50000;
+            document.getElementById('cb-val').textContent = fmt(n);
+            document.getElementById('cb-need').textContent = fmt(n * 0.5) + ' грн';
+            document.getElementById('cb-want').textContent = fmt(n * 0.3) + ' грн';
+            document.getElementById('cb-save').textContent = fmt(n * 0.2) + ' грн';
+        }
+
+        function calcCushion(v) {
+            const n = parseInt(v) || 25000;
+            document.getElementById('cc-val').textContent = fmt(n);
+            document.getElementById('cc-3').textContent = fmt(n * 3) + ' грн';
+            document.getElementById('cc-6').textContent = fmt(n * 6) + ' грн';
+            document.getElementById('cc-9').textContent = fmt(n * 9) + ' грн';
+        }
+
+        function calcCompound() {
+            const pv = parseInt(document.getElementById('comp-pv')?.value) || 20000;
+            const pmt = parseInt(document.getElementById('comp-pmt')?.value) || 5000;
+            const r = parseFloat(document.getElementById('comp-r')?.value) / 100 || 0.15;
+            const n = parseInt(document.getElementById('comp-n')?.value) || 15;
+            document.getElementById('comp-pv').nextElementSibling.textContent = fmt(pv) + ' грн';
+            document.getElementById('comp-pmt').nextElementSibling.textContent = fmt(pmt) + ' грн';
+            document.getElementById('comp-r').nextElementSibling.textContent = Math.round(r * 100) + '%';
+            document.getElementById('comp-n').nextElementSibling.textContent = n;
+            const mr = r / 12, nm = n * 12;
+            const fv = pv * Math.pow(1 + mr, nm) + pmt * (Math.pow(1 + mr, nm) - 1) / mr;
+            const inv = pv + pmt * nm;
+            document.getElementById('comp-invested').textContent = fmt(inv) + ' грн';
+            document.getElementById('comp-total').textContent = fmt(fv) + ' грн';
+            document.getElementById('comp-gain').textContent = '+' + fmt(fv - inv) + ' грн';
+        }
+
+        function calcPortfolio(v) {
+            const n = parseInt(v) || 10000;
+            document.getElementById('port-val').textContent = fmt(n) + ' грн';
+            document.getElementById('port-bonds').textContent = fmt(n * 0.30) + ' грн';
+            document.getElementById('port-etf').textContent = fmt(n * 0.40) + ' грн';
+            document.getElementById('port-re').textContent = fmt(n * 0.15) + ' грн';
+            document.getElementById('port-bb').textContent = fmt(n * 0.15) + ' грн';
+        }
+
+        function calcStrategy() {
+            const inc = parseInt(document.getElementById('strat-inc')?.value) || 60000;
+            const save = parseInt(document.getElementById('strat-save')?.value) || 10;
+            const age = parseInt(document.getElementById('strat-age')?.value) || 30;
+            const goal = parseInt(document.getElementById('strat-goal')?.value) || 15;
+            document.getElementById('strat-inc').nextElementSibling.textContent = fmt(inc);
+            document.getElementById('strat-save').nextElementSibling.textContent = save + '%';
+            document.getElementById('strat-age').nextElementSibling.textContent = age;
+            document.getElementById('strat-goal').nextElementSibling.textContent = goal;
+            const mo = inc * save / 100;
+            const stocks = Math.max(20, 100 - age);
+            const mr = 0.12 / 12, nm = goal * 12;
+            const cap = mo * (Math.pow(1 + mr, nm) - 1) / mr;
+            document.getElementById('strat-mo').textContent = fmt(mo) + ' грн';
+            document.getElementById('strat-stocks').textContent = stocks + '%';
+            document.getElementById('strat-cap').textContent = fmt(cap) + ' грн';
+        }
+
+        // ============================================================
+        // INIT
+        // ============================================================
+        renderModules();
+        updateXPUI();
+    </script>
+</body>
+
+</html>

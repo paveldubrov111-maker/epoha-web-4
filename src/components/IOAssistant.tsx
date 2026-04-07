@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, X, MessageSquare, Zap, Target, TrendingUp, AlertTriangle, Send, ChevronLeft, Shield, Brain, Mic, MicOff, Volume2, VolumeX, RefreshCw } from 'lucide-react';
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { doc, setDoc } from '../firebase';
 import { memoryService, MemoryEntry } from '../services/memoryService';
+import { Currency } from '../types';
 
 export interface IOContext {
   totalCapitalUsd: number;
@@ -42,6 +44,9 @@ interface IOAssistantProps {
   globalMetrics: any;
   portfolios: any[];
   portfolioAssets: any[];
+  formatGlobal: (n: number, targetCur: Currency, rates: Record<string, number>, sourceCur?: Currency, maxDecimals?: number, compact?: boolean) => string;
+  globalCurrency: Currency;
+  exchangeRates: Record<string, number>;
 }
 
 interface Message {
@@ -51,7 +56,7 @@ interface Message {
 }
 
 export const IOAssistant: React.FC<IOAssistantProps> = ({ 
-  t, context, userId, language, globalMetrics, portfolios, portfolioAssets 
+  t, context, userId, language, globalMetrics, portfolios, portfolioAssets, formatGlobal, globalCurrency, exchangeRates 
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState<'overview' | 'chat' | 'voice'>('overview');
@@ -505,10 +510,7 @@ export const IOAssistant: React.FC<IOAssistantProps> = ({
   }[mood];
 
   const fmt = (val: number, curOverride?: string) => {
-    const cur = curOverride || currency;
-    const v = cur === 'USD' ? (curOverride ? val : val) : (curOverride === 'UAH' ? val : val * usdRate);
-    // Note: this is a simple approximation. In App.tsx it's more precise, but for IO's advice it works.
-    return v.toLocaleString(undefined, { maximumFractionDigits: 0 }) + (cur === 'USD' ? ' $' : ' ₴');
+    return formatGlobal(val, (curOverride || globalCurrency) as any, exchangeRates, 'USD');
   };
 
   useEffect(() => {
@@ -1105,21 +1107,37 @@ export const IOAssistant: React.FC<IOAssistantProps> = ({
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999]">
-      {/* Floating Button */}
-      <button
-        onClick={handleOpen}
-        className={`relative w-16 h-16 rounded-full flex items-center justify-center transition-all duration-500 active:scale-90 group ${
-          isOpen 
-            ? 'bg-zinc-900 border border-white/20' 
-            : 'bg-white shadow-[0_10px_30px_rgba(0,0,0,0.2)]'
-        }`}
+    <div className="fixed bottom-24 right-6 md:bottom-6 md:right-6 z-[9999] pointer-events-none">
+      <motion.div 
+        drag={!isOpen}
+        dragMomentum={false}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        whileDrag={{ scale: 1.1, zIndex: 10000 }}
+        className="pointer-events-auto cursor-grab active:cursor-grabbing touch-none"
       >
-        <Sparkles className={`w-7 h-7 transition-all duration-500 ${isOpen ? 'text-indigo-500 rotate-180' : 'text-zinc-900'}`} />
-      </button>
+        {/* Floating Button */}
+        <button
+          onClick={handleOpen}
+          className={`relative w-16 h-16 rounded-full flex items-center justify-center transition-all duration-500 active:scale-90 group ${
+            isOpen 
+              ? 'bg-zinc-900 border border-white/20' 
+              : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.2)]'
+          }`}
+        >
+          <Sparkles className={`w-7 h-7 transition-all duration-500 ${isOpen ? 'text-indigo-500 rotate-180' : 'text-zinc-900 dark:text-zinc-100'}`} />
+        </button>
+      </motion.div>
 
-      {isOpen && (
-        <div className="absolute bottom-20 right-0 w-[420px] max-w-[calc(100vw-2rem)] h-[600px] bg-zinc-950 border border-white/10 rounded-[40px] shadow-[0_40px_80px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col backdrop-blur-3xl animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9, y: 20, x: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20, x: 20 }}
+            className="fixed inset-0 z-[10000] flex items-end md:items-stretch md:inset-auto md:bottom-24 md:right-0 pointer-events-auto"
+          >
+            <div className="w-full h-[85vh] md:w-[420px] md:h-[600px] bg-zinc-950 border-t md:border border-white/10 rounded-t-[40px] md:rounded-[40px] shadow-[0_-20px_80px_rgba(0,0,0,0.6)] md:shadow-[0_40px_80px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col backdrop-blur-3xl">
           <div className="flex flex-col h-full bg-gradient-to-b from-indigo-500/5 to-transparent">
             {/* Header */}
             <div className="p-6 flex items-center justify-between border-b border-white/5">
@@ -1363,12 +1381,14 @@ export const IOAssistant: React.FC<IOAssistantProps> = ({
               </div>
             )}
             <div className="mt-4 text-[9px] text-center text-zinc-600 font-black uppercase tracking-[0.3em]">
-               Binary Oracle Intelligence v1.5
+              Binary Oracle Intelligence v1.5
             </div>
           </div>
         </div>
-      )}
-    </div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+</div>
   );
 };
 
